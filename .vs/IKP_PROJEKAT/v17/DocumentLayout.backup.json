@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{D5EB140E-BD5C-42DB-B726-EA547CB9FBCE}|LoadBalancer\\LoadBalancer.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\LoadBalancer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{D5EB140E-BD5C-42DB-B726-EA547CB9FBCE}|LoadBalancer\\LoadBalancer.vcxproj|solutionrelative:LoadBalancer\\LoadBalancer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{6878AE34-1B45-4968-B4DC-BBB49A329CF7}|Client\\Client.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Client\\Client.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{6878AE34-1B45-4968-B4DC-BBB49A329CF7}|Client\\Client.vcxproj|solutionrelative:Client\\Client.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D5EB140E-BD5C-42DB-B726-EA547CB9FBCE}|LoadBalancer\\LoadBalancer.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\LoadBalancer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{D5EB140E-BD5C-42DB-B726-EA547CB9FBCE}|LoadBalancer\\LoadBalancer.vcxproj|solutionrelative:LoadBalancer\\LoadBalancer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,30 +18,30 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "LoadBalancer.cpp",
               "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\LoadBalancer.cpp",
               "RelativeDocumentMoniker": "LoadBalancer\\LoadBalancer.cpp",
-              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\LoadBalancer.cpp*",
-              "RelativeToolTip": "LoadBalancer\\LoadBalancer.cpp*",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABoAAAABAAAAAAAAAA==",
+              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\LoadBalancer.cpp",
+              "RelativeToolTip": "LoadBalancer\\LoadBalancer.cpp",
+              "ViewState": "AgIAAFYAAAAAAAAAAADwv2kAAAAVAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-12-01T17:39:14.836Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "Client.cpp",
               "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Client\\Client.cpp",
               "RelativeDocumentMoniker": "Client\\Client.cpp",
               "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Client\\Client.cpp",
               "RelativeToolTip": "Client\\Client.cpp",
-              "ViewState": "AgIAAA8AAAAAAAAAAAAAADcAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAABoAAAAAAAAAAADwvyYAAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-12-06T00:47:57.608Z",
               "EditorCaption": ""

@@ -36,18 +36,29 @@ int main()
         return 1;
     }
 
+    std::string userResponse;
     std::string data;
-    std::cout << "Unesite poruku za server: ";
-    std::getline(std::cin, data);
 
-    if (send(clientSocket, data.c_str(), data.size(), 0) == SOCKET_ERROR) {
-        std::cerr << "Greska pri slanju podataka. Kod greske: " << WSAGetLastError() << std::endl;
-        closesocket(clientSocket);
-        WSACleanup();
-        return 1;
+    while (true) {
+        std::cout << "Unesite poruku za server (ili 'end' za prekid): ";
+        std::getline(std::cin, data);
+
+        if (data == "end") {
+            std::cout << "Prekidanje komunikacije sa serverom." << std::endl;
+            break;
+        }
+
+        if (send(clientSocket, data.c_str(), data.size(), 0) == SOCKET_ERROR) {
+            std::cerr << "Greska pri slanju podataka. Kod greske: " << WSAGetLastError() << std::endl;
+            closesocket(clientSocket);
+            WSACleanup();
+            return 1;
+        }
+
+        std::cout << "Poruka poslata serveru!" << std::endl;
     }
 
-    std::cout << "Podaci poslati serveru!" << std::endl;
+    std::cout << "Zatvaranje konekcije sa serverom." << std::endl;
 
     closesocket(clientSocket);
     WSACleanup();
