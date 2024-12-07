@@ -1,20 +1,96 @@
-// Client.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
+﻿#include <iostream>
+#include <string>
+#include <thread>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
-#include <iostream>
+#pragma comment(lib, "ws2_32.lib")
 
-int main()
-{
-    std::cout << "Hello World!\n";
+#define SERVER_IP_ADDRESS "127.0.0.1"
+#define SERVER_PORT 5059
+#define BUFFER_SIZE 256
+
+void sendMessages(SOCKET clientSocket) {
+    std::string data;
+    while (true) {
+        std::cout << "Unesite poruku za server (ili 'end' za prekid): ";
+        std::getline(std::cin, data);
+
+        if (data == "end") {
+            std::cout << "Prekidanje komunikacije sa serverom." << std::endl;
+            break;
+        }
+
+        if (send(clientSocket, data.c_str(), data.size(), 0) == SOCKET_ERROR) {
+            std::cerr << "Greška pri slanju podataka. Kod greške: " << WSAGetLastError() << std::endl;
+            break;
+        }
+
+        std::cout << "Poruka poslata serveru!" << std::endl;
+    }
+
+    // Zatvaranje soketa nakon prekida slanja
+    shutdown(clientSocket, SD_SEND);
 }
 
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
+void receiveMessages(SOCKET clientSocket) {
+    char buffer[BUFFER_SIZE];
+    while (true) {
+        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+        if (bytesReceived <= 0) {
+            if (bytesReceived == 0) {
+                std::cout << "Server je zatvorio vezu." << std::endl;
+            }
+            else {
+                std::cerr << "Greška pri primanju podataka. Kod greške: " << WSAGetLastError() << std::endl;
+            }
+            break;
+        }
 
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
+        buffer[bytesReceived] = '\0';
+        //std::cout << "\nPoruka od servera: " << buffer << std::endl;
+    }
+}
+
+int main() {
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "Greška pri inicijalizaciji Winsock-a. Kod greške: " << WSAGetLastError() << std::endl;
+        return 1;
+    }
+
+    SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (clientSocket == INVALID_SOCKET) {
+        std::cerr << "Greška pri kreiranju soketa. Kod greške: " << WSAGetLastError() << std::endl;
+        WSACleanup();
+        return 1;
+    }
+
+    sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    inet_pton(AF_INET, SERVER_IP_ADDRESS, &serverAddress.sin_addr);
+    serverAddress.sin_port = htons(SERVER_PORT);
+
+    if (connect(clientSocket, (sockaddr*)&serverAddress, sizeof(serverAddress)) == SOCKET_ERROR) {
+        std::cerr << "Neuspešno povezivanje na server. Kod greške: " << WSAGetLastError() << std::endl;
+        closesocket(clientSocket);
+        WSACleanup();
+        return 1;
+    }
+
+    std::cout << "Povezan na server!" << std::endl;
+
+    // Kreiranje threadova za slanje i primanje poruka
+    std::thread sendThread(sendMessages, clientSocket);
+    std::thread receiveThread(receiveMessages, clientSocket);
+
+    // Čekanje da se niti završe
+    sendThread.join();
+    receiveThread.join();
+
+    // Zatvaranje konekcije i čišćenje Winsock-a
+    closesocket(clientSocket);
+    WSACleanup();
+
+    return 0;
+}
