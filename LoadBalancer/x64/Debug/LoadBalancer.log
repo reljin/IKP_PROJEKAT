@@ -1,3 +1,1 @@
-﻿  LoadBalancer.cpp
-C:\Users\Milan\Desktop\IKP\IKP_PROJEKAT\LoadBalancer\LoadBalancer.cpp(38,59): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-  LoadBalancer.vcxproj -> C:\Users\Milan\Desktop\IKP\IKP_PROJEKAT\x64\Debug\LoadBalancer.exe
+﻿  LoadBalancer.vcxproj -> C:\Users\Milan\Desktop\IKP\IKP_PROJEKAT\x64\Debug\LoadBalancer.exe
