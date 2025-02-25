@@ -7,7 +7,7 @@
 #include <mutex>       // Za std::mutex
 #include <iostream>    // Za ispis
 #define BUFFER_SIZE 256
-#define MAX_DATA_SIZE 100 // Globalna konstanta koja definiše maksimalnu veličinu podataka za sve workere
+#define MAX_DATA_SIZE 1000 // Globalna konstanta koja definiše maksimalnu veličinu podataka za sve workere
 
 enum MessageType {
     TEXT_MESSAGE = 1,

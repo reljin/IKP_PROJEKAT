@@ -4,12 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
-// Struktura za čvor u redu
-typedef struct Node {
-    void* data;             // Generički pokazivač na podatke
-    struct Node* next;      // Pokazivač na sledeći čvor
-} Node;
+#include "list.h"
 
 // Struktura za red
 typedef struct Queue {
@@ -35,5 +30,7 @@ int isEmpty(Queue* queue);
 
 // Funkcija za oslobađanje reda
 void freeQueue(Queue* queue);
+
+void clearQueue(Queue* queue);
 
 #endif // QUEUE_H

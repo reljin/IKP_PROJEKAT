@@ -4,56 +4,125 @@
 #include <thread>       // C++ niti
 #include <chrono>       // C++ vreme
 #include <string>       // C++ string
+#include <fstream>
+#include <iostream>
+#include <mutex>
+#include <condition_variable>
+#include <atomic>
+#include "queue.h"      // Uključivanje tvoje queue biblioteke
 
 #pragma comment(lib, "ws2_32.lib")  // Linkovanje Winsock biblioteke
 
 #define SERVER_PORT_WORKER 6060  // Port na kojem worker osluškuje
 #define BUFFER_SIZE 256          // Veličina bafera za komunikaciju
 
-// Funkcija za obradu zahteva od Load Balancera
-void handleWorker(SOCKET workerSocket) {
-    char buffer[BUFFER_SIZE];
+// Globalne promenljive
+std::mutex receivedMessagesQueueMutex;
+std::condition_variable receivedMessagesQueueCV;
+Queue* receivedMessagesQueue = nullptr;
+std::atomic<bool> stopWorker(false);
+
+// Funkcija za čuvanje podataka u fajl
+void saveData(const char* buffer) {
+    std::ofstream file("output.txt", std::ios::app); // Otvaranje fajla u append modu
+    if (!file) {
+        std::cerr << "Greška pri otvaranju fajla." << std::endl;
+        return;
+    }
+    file << buffer << std::endl; // Dodavanje teksta u fajl
+    file.close(); // Zatvaranje fajla
+}
+
+void processMessages(SOCKET workerSocket) {
+    char* queueStoredBuffer = (char*)malloc(receivedMessagesQueue->dataSize);
+
+    if (!queueStoredBuffer) {
+        perror("Greška pri alokaciji memorije za queueStoredBuffer");
+        return;
+    }
 
     while (true) {
-        // Primanje podataka od Load Balancera
-        int bytesReceived = recv(workerSocket, buffer, sizeof(buffer) - 1, 0);
-        if (bytesReceived <= 0) {
-            if (bytesReceived == 0) {
-                printf("Load Balancer se diskonektovao.\n");
-            }
-            else {
-                printf("Greska pri primanju podataka. Kod greske: %d\n", WSAGetLastError());
-            }
+        std::unique_lock<std::mutex> lock(receivedMessagesQueueMutex);
+        receivedMessagesQueueCV.wait(lock, [] { return !isEmpty(receivedMessagesQueue) || stopWorker.load(); });
+
+        if (stopWorker.load()) {
+            free(queueStoredBuffer);
             break;
         }
 
-        buffer[bytesReceived] = '\0';  // Dodajemo null-terminator
-        printf("Primljeni podaci od Load Balancera: %s\n", buffer);
+        dequeue(receivedMessagesQueue, queueStoredBuffer);
+        queueStoredBuffer[receivedMessagesQueue->dataSize - 1] = '\0';
 
-        // Simulacija obrade podataka (1 sekunda)
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        printf("Worker primio poruku: %s\n", queueStoredBuffer);
 
-        // Slanje odgovora Load Balanceru
-        std::string response = "Podaci obradjeni: " + std::string(buffer);
+        lock.unlock(); // Oslobađamo mutex pre obrade
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(30)); // Simulacija obrade ne radi ispod 30???
+
+        std::string response = "Podaci obradjeni: " + std::string(queueStoredBuffer);
         send(workerSocket, response.c_str(), response.size(), 0);
     }
 
-    closesocket(workerSocket);  // Zatvaranje soketa
-    printf("Nit Workera zavrsena.\n");
+    free(queueStoredBuffer);
+}
+
+void receiveData(SOCKET workerSocket) {
+    char buffer[BUFFER_SIZE];
+
+    while (true) {
+        int bytesReceived = recv(workerSocket, buffer, sizeof(buffer) - 1, 0);
+        if (bytesReceived <= 0) break; // Kraj veze ili greška
+
+        buffer[bytesReceived] = '\0';
+
+        {
+            std::lock_guard<std::mutex> lock(receivedMessagesQueueMutex);
+            if (strcmp(buffer, "FREE_QUEUE") == 0) {
+                printf("FREE_QUEUE\n");
+                clearQueue(receivedMessagesQueue);
+                continue; // Ne dodajemo "FREE_QUEUE" u red
+            }
+            enqueue(receivedMessagesQueue, buffer);
+        }
+        receivedMessagesQueueCV.notify_one();
+    }
+
+    stopWorker.store(true);
+    receivedMessagesQueueCV.notify_all();
+}
+
+void handleWorker(SOCKET workerSocket) {
+    std::thread processingThread(processMessages, workerSocket);
+    receiveData(workerSocket);
+
+    processingThread.join();
+    closesocket(workerSocket);
+
+    {
+        std::lock_guard<std::mutex> lock(receivedMessagesQueueMutex);
+        freeQueue(receivedMessagesQueue);
+    }
 }
 
 int main() {
     // Inicijalizacija Winsock-a
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        printf("Greska pri inicijalizaciji Winsock-a.\n");
+        printf("Greška pri inicijalizaciji Winsock-a.\n");
+        return 1;
+    }
+
+    receivedMessagesQueue = createQueue(BUFFER_SIZE);
+    if (!receivedMessagesQueue) {
+        printf("Greška pri kreiranju reda klijenata.\n");
+        WSACleanup();
         return 1;
     }
 
     // Kreiranje soketa
     SOCKET workerSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (workerSocket == INVALID_SOCKET) {
-        printf("Greska pri kreiranju soketa.\n");
+        printf("Greška pri kreiranju soketa.\n");
         WSACleanup();
         return 1;
     }
@@ -63,9 +132,8 @@ int main() {
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(SERVER_PORT_WORKER);
 
-    // Konverzija IP adrese iz stringa u binarnu formu
     if (inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr) <= 0) {
-        printf("Greska pri konverziji IP adrese.\n");
+        printf("Greška pri konverziji IP adrese.\n");
         closesocket(workerSocket);
         WSACleanup();
         return 1;
@@ -73,7 +141,7 @@ int main() {
 
     // Povezivanje sa Load Balancerom
     if (connect(workerSocket, (sockaddr*)&serverAddress, sizeof(serverAddress)) == SOCKET_ERROR) {
-        printf("Greska pri povezivanju sa Load Balancerom.\n");
+        printf("Greška pri povezivanju sa Load Balancerom.\n");
         closesocket(workerSocket);
         WSACleanup();
         return 1;
@@ -91,8 +159,7 @@ int main() {
 
     // Glavni tok rada (simulacija drugih poslova)
     while (true) {
-        printf("Worker radi druge poslove...\n");
-        std::this_thread::sleep_for(std::chrono::seconds(5));
+        std::this_thread::sleep_for(std::chrono::seconds(5000));
     }
 
     // Zatvaranje soketa i čišćenje Winsock-a

@@ -1,31 +1,27 @@
 ﻿#include "list.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stddef.h>
 
-// Funkcija za kreiranje novog čvora
-Node* createNode(void* value, size_t dataSize) {
-    Node* newNode = (Node*)malloc(sizeof(Node));
+// Funkcija za kreiranje novog čvora koja čuva originalni pokazivač
+Node* createNode(void* value) {
+    Node* newNode = (Node*)malloc(sizeof(Node)); //zauzeta 
     if (newNode == NULL) {
         printf("Greška: Nema dovoljno memorije!\n");
         return NULL;
     }
-    newNode->data = malloc(dataSize);
-    if (newNode->data == NULL) {
-        printf("Greška: Nema dovoljno memorije za podatke!\n");
-        free(newNode);
-        return NULL;
-    }
-    memcpy(newNode->data, value, dataSize);
+    // Umesto kopiranja, samo dodeljujemo pokazivač
+    newNode->data = value;
     newNode->next = NULL;
     return newNode;
 }
 
 // Funkcija za umetanje elementa na kraj liste
+// Parametar dataSize ostaje radi kompatibilnosti, ali se ne koristi
 void insertAtEnd(Node** head, void* value, size_t dataSize) {
-    Node* newNode = createNode(value, dataSize);
-    if (newNode == NULL) return;
+    Node* newNode = createNode(value);
+    if (newNode == NULL)
+        return;
 
     if (*head == NULL) {  // Ako je lista prazna
         *head = newNode;
@@ -41,14 +37,16 @@ void insertAtEnd(Node** head, void* value, size_t dataSize) {
 
 // Funkcija za umetanje elementa na početak liste
 void insertAtBeginning(Node** head, void* value, size_t dataSize) {
-    Node* newNode = createNode(value, dataSize);
-    if (newNode == NULL) return;
+    Node* newNode = createNode(value);
+    if (newNode == NULL)
+        return;
 
     newNode->next = *head;
     *head = newNode;
 }
 
-// Funkcija za brisanje čvora sa zadatom vrednošću (pretraga po podacima)
+// Funkcija za brisanje čvora sa zadatom vrednošću (pretraga po podacima (posledji argument je za prosledjivanje f-je dal trazim po id-u ili po pokazivacu))
+// Ova verzija ne oslobadja memoriju podataka (newNode->data) jer lista samo čuva originalni pokazivač.
 void deleteNode(Node** head, void* value, size_t dataSize, int (*cmp)(void*, void*)) {
     if (*head == NULL) {
         printf("Lista je prazna!\n");
@@ -58,7 +56,6 @@ void deleteNode(Node** head, void* value, size_t dataSize, int (*cmp)(void*, voi
     Node* temp = *head;
     if (cmp(temp->data, value) == 0) {  // Ako je prvi čvor taj koji treba obrisati
         *head = temp->next;
-        free(temp->data);
         free(temp);
         return;
     }
@@ -75,7 +72,6 @@ void deleteNode(Node** head, void* value, size_t dataSize, int (*cmp)(void*, voi
     }
 
     prev->next = temp->next;
-    free(temp->data);
     free(temp);
 }
 
@@ -83,12 +79,10 @@ void deleteNode(Node** head, void* value, size_t dataSize, int (*cmp)(void*, voi
 size_t getListSize(Node* head) {
     size_t size = 0;
     Node* current = head;
-
     while (current != NULL) {
         size++;
         current = current->next;
     }
-
     return size;
 }
 
@@ -98,7 +92,6 @@ void displayList(Node* head, void (*printData)(void*)) {
         printf("Lista je prazna!\n");
         return;
     }
-
     Node* temp = head;
     printf("Elementi u listi: ");
     while (temp != NULL) {

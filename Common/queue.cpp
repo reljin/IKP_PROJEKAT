@@ -16,13 +16,13 @@ Queue* createQueue(size_t dataSize) {
 void enqueue(Queue* queue, void* data) {
     Node* newNode = (Node*)malloc(sizeof(Node));
     if (!newNode) {
-        perror("Greška pri alokaciji memorije za čvor");
+        perror("Greska pri alokaciji memorije za cvor");
         exit(EXIT_FAILURE);
     }
 
     newNode->data = malloc(queue->dataSize);
     if (!newNode->data) {
-        perror("Greška pri alokaciji memorije za podatke");
+        perror("Greska pri alokaciji memorije za podatke");
         free(newNode);
         exit(EXIT_FAILURE);
     }
@@ -80,12 +80,16 @@ int isEmpty(Queue* queue) {
     return queue->front == NULL;
 }
 
+void clearQueue(Queue* queue) {
+    while (!isEmpty(queue)) {
+        dequeue(queue, NULL);  // Oslobađa elemente reda
+    }
+}
+
 // Oslobađanje reda
 void freeQueue(Queue* queue) {
     while (!isEmpty(queue)) {
-        void* temp = malloc(queue->dataSize);
-        dequeue(queue, temp);
-        free(temp);
+        dequeue(queue, NULL);  // Oslobađa čvor i njegove podatke
     }
-    free(queue);
+    free(queue);  // Oslobađa memoriju za red
 }

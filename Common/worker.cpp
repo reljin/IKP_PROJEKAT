@@ -60,7 +60,7 @@ Message* removeMessageFromWorker(Worker* worker) {
     std::lock_guard<std::mutex> lock(worker->mtx);
 
     if (worker->dataCount == 0) {
-        std::cerr << "Nema poruka za uklanjanje." << std::endl;
+        //std::cerr << "Nema poruka za uklanjanje." << std::endl;
         return NULL;
     }
 

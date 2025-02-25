@@ -5,6 +5,8 @@
 #include <mutex>
 #include "worker.h"  // Uključujemo header sa Worker strukturom
 #include "list.h"    // Ukoliko koristiš listu za skladištenje workera
+#include "queue.h"
+#include "Distributor.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -12,9 +14,18 @@
 #define SERVER_PORT_WORKER 6060
 #define BUFFER_SIZE 256
 
+
 std::mutex clientSocketsMutex;
 std::vector<SOCKET> clientSockets;
+
+
+int broj_obradjenih_poruka=0;
+int counter = 0;
+
+std::mutex workersMutex;  // Mutex za zaštitu liste workera
 Node* workers = NULL;
+Queue* clientMessages = NULL;
+std::mutex clientMessageQueueMutex;
 
 void printWorker(void* data) {
     Worker* worker = (Worker*)data;
@@ -23,31 +34,11 @@ void printWorker(void* data) {
         return;
     }
 
-    printf("\nWorker ID: %d, Socket FD: %d\n", worker->id, worker->socketFd);
+    printf("\nWorker ID: %d, Socket FD: %d, MessagesCount %d\n", worker->id, worker->socketFd, worker->dataCount);
 }
 
-// Funkcija za slanje poruke workeru
-void sendDataToWorker(Worker* worker, const char* message) {
-    if (worker == NULL) {
-        printf("Nevalidan Worker!\n");
-        return;
-    }
-
-    // Dodajemo poruku u worker
-    Message msg = { TEXT_MESSAGE, "" };
-    strncpy_s(msg.content, message, sizeof(msg.content) - 1);
-    msg.content[sizeof(msg.content) - 1] = '\0';
-
-    addMessageToWorker(worker, &msg);
-    printf("Ne znam zasto ne radim");
-    // Ako želimo da pošaljemo poruku putem soketa
-    int bytesSent = send(worker->socketFd, message, static_cast<int>(strlen(message)), 0);  // Ispravljeno
-    if (bytesSent == SOCKET_ERROR) {
-        printf("Greška pri slanju poruke workeru.\n");
-    }
-    else {
-        printf("Poruka poslata workeru sa ID: %d\n", worker->id);
-    }
+int compareWorkersByPointer(void* a, void* b) {
+    return (a == b) ? 0 : 1;
 }
 
 void handleClient(SOCKET clientSocket) {
@@ -67,11 +58,24 @@ void handleClient(SOCKET clientSocket) {
 
         buffer[bytesReceived] = '\0';
         printf("Poruka od klijenta: %s\n", buffer);
+        {
+            std::lock_guard<std::mutex> lock(clientMessageQueueMutex);
+            enqueue(clientMessages, buffer);
+        }
+        
 
-        // Pretpostavljamo da želimo da šaljemo poruku prvom dostupnom workeru
+        Worker* mostFreeWorker = nullptr;
+
         if (workers != NULL) {
-            Worker* firstWorker = (Worker*)workers->data;
-            sendDataToWorker(firstWorker, buffer);
+            {
+                
+                std::lock_guard<std::mutex> lock(workersMutex);
+                mostFreeWorker = findMostFreeWorker(workers); 
+            }
+
+            if (mostFreeWorker != nullptr) {
+                sendDataToWorker(mostFreeWorker, clientMessages);
+            }
         }
 
         std::string response = "Poruka primljena: " + std::string(buffer);
@@ -88,14 +92,14 @@ void handleClient(SOCKET clientSocket) {
         }
     }
 
-    printf("Završena nit za klijenta.\n");
+    printf("Zavrsena nit za klijenta.\n");
 }
 
 void clientListener(SOCKET clientListenSocket) {
     while (true) {
         SOCKET clientSocket = accept(clientListenSocket, NULL, NULL);
         if (clientSocket == INVALID_SOCKET) {
-            printf("Greška pri prihvatanju veze.\n");
+            printf("Greska pri prihvatanju veze.\n");
             continue;
         }
 
@@ -110,7 +114,65 @@ void clientListener(SOCKET clientListenSocket) {
     }
 }
 
+void handleWorkerResponse(Worker* worker) {
+    char buffer[BUFFER_SIZE];
+    while (true) {
+        int bytesReceived = recv(worker->socketFd, buffer, sizeof(buffer) - 1, 0);
+        if (bytesReceived <= 0) {
+            if (bytesReceived == 0) {
+                printf("Worker %d se diskonektovao.\n", worker->id);
+            }
+            else {
+                printf("Greska pri primanju odgovora od workera ID%d. Kod greske: %d\n", worker->id, WSAGetLastError());
+                break;
+            }
+            break;  // Prekidamo petlju ako dođe do greške ili diskonektovanja
+        }
+        removeMessageFromWorker(worker);
+        buffer[bytesReceived] = '\0';
+        printf("Worker ID%d: %s\n", worker->id, buffer);
 
+        std::mutex obradjeneLockMutex;
+        {
+            std::lock_guard<std::mutex> lock(obradjeneLockMutex);
+            printf("Broj obradjenih poruka %d\n", ++broj_obradjenih_poruka);
+        }
+      
+        // Ovdje možeš dodati logiku za dalje prosleđivanje odgovora,
+        // npr. do klijenta ili za logovanje.
+    }
+
+
+    //AKO SE WORKER DISKONEKTUJE , skini mu sve poruke, uradi redistribuciju 
+    {
+        std::lock_guard<std::mutex> lock(clientMessageQueueMutex);  // Zaključavanje queue-a
+
+        while (true) {
+            Message* msg = removeMessageFromWorker(worker);  
+            if (msg == NULL) break;  
+            printf("Poruka vracena u queue: %s\n", msg->content);
+            enqueue(clientMessages, msg->content);
+            free(msg);
+            
+        }
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(workersMutex);  // Zaključavanje mutex-a
+        deleteNode(&workers, worker, sizeof(Worker), compareWorkersByPointer);
+        
+    }
+    destroyWorker(worker);
+
+    {
+        std::lock_guard<std::mutex> lock(workersMutex);
+        redistributeMessages(clientMessages, workers);
+    }
+    //displayList(workers, printWorker);
+
+}
+
+#include <chrono>       // C++ vreme
 // Funkcija za osvežavanje liste workera u Load Balanceru
 void workerListener(SOCKET workerListenSocket) {
     while (true) {
@@ -125,23 +187,35 @@ void workerListener(SOCKET workerListenSocket) {
         // Kreiranje novog workera
         Worker* newWorker = createWorker(static_cast<int>(getListSize(workers)));
         newWorker->socketFd = static_cast<int>(workerSocket);
+        
+        {
+        std::lock_guard<std::mutex> lock(workersMutex);  // Zaključavanje mutex-a
 
-        // Dodajemo novog workera u listu workera
         insertAtEnd(&workers, newWorker, sizeof(Worker));
+        printf("Novi Worker dodat sa ID: %d\n", newWorker->id);
+ 
+        }
+
+        if (getListSize(workers) > 1) {
+            std::lock_guard<std::mutex> lock(workersMutex);
+            redistributeMessages(clientMessages, workers);
+        }
+        displayList(workers, printWorker);
 
         // Ovdje možemo da komuniciramo sa workerom
         char buffer[BUFFER_SIZE];
         int bytesReceived = recv(workerSocket, buffer, sizeof(buffer) - 1, 0);
         if (bytesReceived > 0) {
             buffer[bytesReceived] = '\0';
-            printf("Podaci od Workera: %s\n", buffer);
+            //printf("Podaci od Workera: %s\n", buffer);
         }
 
         // Ispisivanje informacija o novom workeru
-        printWorkerInfo(newWorker);
-        displayList(workers, printWorker);
+        //printWorkerInfo(newWorker);
+        //displayList(workers, printWorker);
 
-        // Ne zatvaramo soket ovde, jer ćemo ga koristiti za dalju komunikaciju
+        std::thread(handleWorkerResponse, newWorker).detach();
+
     }
 }
 
@@ -149,6 +223,13 @@ int main() {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         printf("Greška pri inicijalizaciji Winsock-a.\n");
+        return 1;
+    }
+
+    clientMessages = createQueue(BUFFER_SIZE);
+    if (!clientMessages) {
+        printf("Greška pri kreiranju reda klijenata.\n");
+        WSACleanup();
         return 1;
     }
 
@@ -210,8 +291,8 @@ int main() {
     std::thread(workerListener, workerListenSocket).detach();
 
     while (true) {
-        printf("Load Balancer radi druge poslove...\n");
-        std::this_thread::sleep_for(std::chrono::seconds(5));
+        //printf("Load Balancer radi druge poslove...\n");
+        std::this_thread::sleep_for(std::chrono::seconds(1000));
     }
 
     closesocket(clientListenSocket);
