@@ -1,0 +1,4 @@
+﻿  Worker.cpp
+C:\Users\Milan\Desktop\IKP\IKP_PROJEKAT\Worker\Worker.cpp(63,59): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\Milan\Desktop\IKP\IKP_PROJEKAT\Worker\Worker.cpp(154,53): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  Worker.vcxproj -> C:\Users\Milan\Desktop\IKP\IKP_PROJEKAT\x64\Debug\Worker.exe

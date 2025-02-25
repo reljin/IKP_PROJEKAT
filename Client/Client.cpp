@@ -10,23 +10,55 @@
 #define SERVER_PORT 5059
 #define BUFFER_SIZE 256
 
+std::string generateRandomMessage(int messageNum) {
+    return "Poruka broj " + std::to_string(messageNum);
+}
+
 void sendMessages(SOCKET clientSocket) {
     std::string data;
-    while (true) {
-        std::cout << "Unesite poruku za server (ili 'end' za prekid): ";
-        std::getline(std::cin, data);
+    int option;
 
-        if (data == "end") {
-            std::cout << "Prekidanje komunikacije sa serverom." << std::endl;
-            break;
+    // Prikazivanje opcija korisniku
+    std::cout << "Izaberite opciju:" << std::endl;
+    std::cout << "1. Unesite poruku za server (ili 'end' za prekid)" << std::endl;
+    std::cout << "2. Pošaljite 100 različitih poruka" << std::endl;
+    std::cin >> option;
+    std::cin.ignore();  // Da bismo očistili buffer nakon unosa opcije
+
+    if (option == 1) {
+        // Opcija 1: Ručno slanje poruka
+        while (true) {
+            std::cout << "Unesite poruku za server (ili 'end' za prekid): ";
+            std::getline(std::cin, data);
+
+            if (data == "end") {
+                std::cout << "Prekidanje komunikacije sa serverom." << std::endl;
+                break;
+            }
+            
+            if (send(clientSocket, data.c_str(), data.size(), 0) == SOCKET_ERROR) {
+                std::cerr << "Greška pri slanju podataka. Kod greške: " << WSAGetLastError() << std::endl;
+                break;
+            }
+
+            std::cout << "Poruka poslata serveru!" << std::endl;
         }
+    }
+    else if (option == 2) {
+        // Opcija 2: Slanje 1000 različitih poruka
+        for (int i = 1; i <= 5000; ++i) {
+            data = generateRandomMessage(i);
+            std::this_thread::sleep_for(std::chrono::microseconds(2)); // ispod 2 send konkatenira poruke
+            if (send(clientSocket, data.c_str(), data.size(), 0) == SOCKET_ERROR) {
+                std::cerr << "Greška pri slanju podataka. Kod greške: " << WSAGetLastError() << std::endl;
+                break;
+            }
 
-        if (send(clientSocket, data.c_str(), data.size(), 0) == SOCKET_ERROR) {
-            std::cerr << "Greška pri slanju podataka. Kod greške: " << WSAGetLastError() << std::endl;
-            break;
+            std::cout << "Poruka " << i << " poslata serveru!" << std::endl;
         }
-
-        std::cout << "Poruka poslata serveru!" << std::endl;
+    }
+    else {
+        std::cout << "Nepoznata opcija!" << std::endl;
     }
 
     // Zatvaranje soketa nakon prekida slanja
