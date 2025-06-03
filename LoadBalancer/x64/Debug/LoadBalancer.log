@@ -1,6 +1,0 @@
-﻿  LoadBalancer.cpp
-C:\Users\Milan\Desktop\ikp-pravi\IKP_PROJEKAT\LoadBalancer\LoadBalancer.cpp(176,24): warning C4566: character represented by universal-character-name '\u0107' cannot be represented in the current code page (1252)
-C:\Users\Milan\Desktop\ikp-pravi\IKP_PROJEKAT\LoadBalancer\LoadBalancer.cpp(176,24): warning C4566: character represented by universal-character-name '\u0111' cannot be represented in the current code page (1252)
-C:\Users\Milan\Desktop\ikp-pravi\IKP_PROJEKAT\LoadBalancer\LoadBalancer.cpp(176,24): warning C4566: character represented by universal-character-name '\u010D' cannot be represented in the current code page (1252)
-C:\Users\Milan\Desktop\ikp-pravi\IKP_PROJEKAT\LoadBalancer\LoadBalancer.cpp(299,24): warning C4566: character represented by universal-character-name '\u0111' cannot be represented in the current code page (1252)
-  LoadBalancer.vcxproj -> C:\Users\Milan\Desktop\ikp-pravi\IKP_PROJEKAT\x64\Debug\LoadBalancer.exe

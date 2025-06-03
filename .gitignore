@@ -1,0 +1,61 @@
+# Build rezultati
+[Bb]in/
+[Oo]bj/
+*.exe
+*.dll
+*.lib
+*.pdb
+*.ilk
+*.iobj
+*.ipdb
+
+# IntelliSense / VS fajlovi
+*.ipch
+*.sdf
+*.VC.db
+*.VC.opendb
+.vs/
+
+# Logovi i cache
+*.log
+*.tlog
+*.cache
+*.lastbuildstate
+*.idb
+
+# User fajlovi (po korisniku, ne po projektu)
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# CMake (ako koristiš)
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Temporary
+*.tmp
+*.bak
+
+# Direktno build output
+*.obj
+*.o
+*.pch
+
+# Direktno uključene IDE postavke
+*.ncb
+*.opensdf
+*.db
+
+# Precompiled headers
+*.gch
+*.pch
+
+# Backup fajlovi
+*~
+*.orig
+
+# VSCode (ako koristiš i njega)
+.vscode/

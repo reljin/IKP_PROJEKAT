@@ -1,3 +1,0 @@
-﻿  Client.cpp
-C:\Users\Milan\Desktop\ikp-pravi\IKP_PROJEKAT\Client\Client.cpp(34,12): warning C4566: character represented by universal-character-name '\u010D' cannot be represented in the current code page (1252)
-  Client.vcxproj -> C:\Users\Milan\Desktop\ikp-pravi\IKP_PROJEKAT\x64\Debug\Client.exe
