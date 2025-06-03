@@ -6,20 +6,9 @@
 #include <winsock2.h> // Za socket funkcionalnost
 #include <mutex>       // Za std::mutex
 #include <iostream>    // Za ispis
+#include "message.h"
 #define BUFFER_SIZE 256
 #define MAX_DATA_SIZE 1000 // Globalna konstanta koja definiše maksimalnu veličinu podataka za sve workere
-
-enum MessageType {
-    TEXT_MESSAGE = 1,
-    FILE_MESSAGE,
-    CONTROL_MESSAGE,
-    ERROR_MESSAGE  // Novi tip poruke
-};
-
-typedef struct Message {
-    int type;               // Tip poruke (za identifikaciju)
-    char content[BUFFER_SIZE]; // Sadržaj poruke
-} Message;
 
 // Struktura za Workera
 typedef struct Worker {

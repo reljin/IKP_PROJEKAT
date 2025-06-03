@@ -1,4 +1,5 @@
 ﻿#include "Distributor.h"
+#include "message.h"
 #include <iostream>
 
 extern std::mutex clientMessageQueueMutex;
@@ -26,33 +27,25 @@ Worker* findMostFreeWorker(Node *head)
 
 void sendDataToWorker(Worker* worker, Queue* clientMessages) {
 
-   
-
     if (worker == NULL) {
         printf("Nevalidan Worker!\n");
         return;
     }
 
-    char message[BUFFER_SIZE] = { 0 };
+    Message msg;
     {
         std::lock_guard<std::mutex> lock(clientMessageQueueMutex);
-        dequeue(clientMessages, message);
+        dequeue(clientMessages, &msg);
     }
 
-    // Preparing the Message structure
-    Message msg = { TEXT_MESSAGE, "" };
-    strncpy_s(msg.content, message, sizeof(msg.content) - 1);
-    msg.content[sizeof(msg.content) - 1] = '\0';  // Ensure null-termination
+    char serialized[BUFFER_SIZE] = { 0 };
+    snprintf(serialized, sizeof(serialized), "%d|%s", msg.msg_id, msg.content);
 
     addMessageToWorker(worker, &msg);
 
-    // Instead of dynamic memory allocation, use the message buffer directly
-    // Send the message to the worker
-   
-
-    int bytesSent = send(worker->socketFd, message, static_cast<int>(strlen(message)), 0);
+    int bytesSent = send(worker->socketFd, serialized, static_cast<int>(strlen(serialized)), 0);
     if (bytesSent == SOCKET_ERROR) {
-        printf("Greška pri slanju poruke workeru.\n");
+        printf("Greska pri slanju poruke workeru.\n");
     }
     else {
         printf("Poruka poslata workeru sa ID: %d\n", worker->id);

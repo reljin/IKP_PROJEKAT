@@ -67,7 +67,7 @@ void deleteNode(Node** head, void* value, size_t dataSize, int (*cmp)(void*, voi
     }
 
     if (temp == NULL) {  // Ako element nije pronađen
-        printf("Element nije pronađen u listi!\n");
+        printf("Element nije pronadjen u listi!\n");
         return;
     }
 

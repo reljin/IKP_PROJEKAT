@@ -1,57 +1,46 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\",
+  "WorkspaceRootPath": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{6878AE34-1B45-4968-B4DC-BBB49A329CF7}|Client\\Client.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Client\\Client.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{6878AE34-1B45-4968-B4DC-BBB49A329CF7}|Client\\Client.vcxproj|C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Client\\Client.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{6878AE34-1B45-4968-B4DC-BBB49A329CF7}|Client\\Client.vcxproj|solutionrelative:Client\\Client.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C2299551-3B35-464B-B5EA-5AD8D0CDA6CA}|Worker\\Worker.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Worker\\Worker.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{C2299551-3B35-464B-B5EA-5AD8D0CDA6CA}|Worker\\Worker.vcxproj|solutionrelative:Worker\\Worker.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D5EB140E-BD5C-42DB-B726-EA547CB9FBCE}|LoadBalancer\\LoadBalancer.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\LoadBalancer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{D5EB140E-BD5C-42DB-B726-EA547CB9FBCE}|LoadBalancer\\LoadBalancer.vcxproj|C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\LoadBalancer\\LoadBalancer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{D5EB140E-BD5C-42DB-B726-EA547CB9FBCE}|LoadBalancer\\LoadBalancer.vcxproj|solutionrelative:LoadBalancer\\LoadBalancer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D5EB140E-BD5C-42DB-B726-EA547CB9FBCE}|LoadBalancer\\LoadBalancer.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\Distributor.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\hashset.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|solutionrelative:Common\\hashset.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D5EB140E-BD5C-42DB-B726-EA547CB9FBCE}|LoadBalancer\\LoadBalancer.vcxproj|C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\LoadBalancer\\Distributor.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{D5EB140E-BD5C-42DB-B726-EA547CB9FBCE}|LoadBalancer\\LoadBalancer.vcxproj|solutionrelative:LoadBalancer\\Distributor.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\list.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|solutionrelative:Common\\list.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{C2299551-3B35-464B-B5EA-5AD8D0CDA6CA}|Worker\\Worker.vcxproj|C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Worker\\Worker.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{C2299551-3B35-464B-B5EA-5AD8D0CDA6CA}|Worker\\Worker.vcxproj|solutionrelative:Worker\\Worker.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\worker.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\worker.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|solutionrelative:Common\\worker.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\list.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\hashset.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|solutionrelative:Common\\hashset.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\list.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|solutionrelative:Common\\list.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C35E271D-AB5D-43EC-B306-D2BAB4372417}|Replicator\\Replicator.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Replicator\\Replicator.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{C35E271D-AB5D-43EC-B306-D2BAB4372417}|Replicator\\Replicator.vcxproj|solutionrelative:Replicator\\Replicator.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\worker.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|solutionrelative:Common\\worker.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\queue.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|solutionrelative:Common\\queue.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\queue.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|solutionrelative:Common\\queue.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D5EB140E-BD5C-42DB-B726-EA547CB9FBCE}|LoadBalancer\\LoadBalancer.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\Distributor.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{D5EB140E-BD5C-42DB-B726-EA547CB9FBCE}|LoadBalancer\\LoadBalancer.vcxproj|solutionrelative:LoadBalancer\\Distributor.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\COMMON\\WORKER.H||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|solutionrelative:COMMON\\WORKER.H||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\include\\thread||{3B902123-F8A7-4915-9F01-361F908088D0}|"
+      "AbsoluteMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\message.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{240907EF-D011-43E3-B69A-70EC14E2CF9B}|Common\\Common.vcxproj|solutionrelative:Common\\message.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -61,171 +50,131 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "thread",
-              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\include\\thread",
-              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\include\\thread",
-              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\include\\thread",
-              "RelativeToolTip": "..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\include\\thread",
-              "ViewState": "AgIAAFAAAAAAAAAAAAAowGEAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2025-02-10T20:01:23.711Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "Replicator.cpp",
-              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Replicator\\Replicator.cpp",
-              "RelativeDocumentMoniker": "Replicator\\Replicator.cpp",
-              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Replicator\\Replicator.cpp",
-              "RelativeToolTip": "Replicator\\Replicator.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 6,
+              "Title": "hashset.cpp",
+              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\hashset.cpp",
+              "RelativeDocumentMoniker": "Common\\hashset.cpp",
+              "ToolTip": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\hashset.cpp",
+              "RelativeToolTip": "Common\\hashset.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-02-10T18:17:49.808Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-02T17:40:25.254Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "LoadBalancer.cpp",
-              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\LoadBalancer.cpp",
-              "RelativeDocumentMoniker": "LoadBalancer\\LoadBalancer.cpp",
-              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\LoadBalancer.cpp",
-              "RelativeToolTip": "LoadBalancer\\LoadBalancer.cpp",
-              "ViewState": "AgIAABIAAAAAAAAAAAAAAMYAAAAkAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-02-10T18:00:04.301Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Client.cpp",
-              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Client\\Client.cpp",
-              "RelativeDocumentMoniker": "Client\\Client.cpp",
-              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Client\\Client.cpp",
-              "RelativeToolTip": "Client\\Client.cpp",
-              "ViewState": "AgIAABUAAAAAAAAAAAAtwCsAAABAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-02-06T17:37:21.275Z",
+              "Title": "hashset.h",
+              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\hashset.h",
+              "RelativeDocumentMoniker": "Common\\hashset.h",
+              "ToolTip": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\hashset.h",
+              "RelativeToolTip": "Common\\hashset.h",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-06-02T17:39:51.585Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "Worker.cpp",
-              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Worker\\Worker.cpp",
-              "RelativeDocumentMoniker": "Worker\\Worker.cpp",
-              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Worker\\Worker.cpp",
-              "RelativeToolTip": "Worker\\Worker.cpp",
-              "ViewState": "AgIAACoAAAAAAAAAAAAAADsAAABoAAAAAAAAAA==",
+              "Title": "LoadBalancer.cpp",
+              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\LoadBalancer\\LoadBalancer.cpp",
+              "RelativeDocumentMoniker": "LoadBalancer\\LoadBalancer.cpp",
+              "ToolTip": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\LoadBalancer\\LoadBalancer.cpp",
+              "RelativeToolTip": "LoadBalancer\\LoadBalancer.cpp",
+              "ViewState": "AgIAAGwAAAAAAAAAAAAAAKwAAAB7AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-01-28T12:48:33.812Z",
+              "WhenOpened": "2025-06-02T12:14:41.67Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
               "Title": "Distributor.cpp",
-              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\Distributor.cpp",
+              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\LoadBalancer\\Distributor.cpp",
               "RelativeDocumentMoniker": "LoadBalancer\\Distributor.cpp",
-              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\Distributor.cpp",
+              "ToolTip": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\LoadBalancer\\Distributor.cpp",
               "RelativeToolTip": "LoadBalancer\\Distributor.cpp",
-              "ViewState": "AgIAADkAAAAAAAAAAAAAAFoAAAAeAAAAAAAAAA==",
+              "ViewState": "AgIAABIAAAAAAAAAAAAAACsAAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-02-06T15:35:34.536Z",
+              "WhenOpened": "2025-06-02T12:03:13.848Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "Distributor.h",
-              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\Distributor.h",
-              "RelativeDocumentMoniker": "LoadBalancer\\Distributor.h",
-              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\LoadBalancer\\Distributor.h",
-              "RelativeToolTip": "LoadBalancer\\Distributor.h",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-02-06T15:33:27.431Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "queue.h",
-              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\queue.h",
-              "RelativeDocumentMoniker": "Common\\queue.h",
-              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\queue.h",
-              "RelativeToolTip": "Common\\queue.h",
-              "ViewState": "AgIAAA8AAAAAAAAAAAAAACEAAAAeAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-02-06T15:28:40.085Z"
+              "DocumentIndex": 0,
+              "Title": "Client.cpp",
+              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Client\\Client.cpp",
+              "RelativeDocumentMoniker": "Client\\Client.cpp",
+              "ToolTip": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Client\\Client.cpp",
+              "RelativeToolTip": "Client\\Client.cpp",
+              "ViewState": "AgIAACcAAAAAAAAAAAAAAD4AAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-02T11:52:15.84Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 8,
-              "Title": "queue.cpp",
-              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\queue.cpp",
-              "RelativeDocumentMoniker": "Common\\queue.cpp",
-              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\queue.cpp",
-              "RelativeToolTip": "Common\\queue.cpp",
-              "ViewState": "AgIAAEIAAAAAAAAAAAAAAFYAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-02-06T17:02:53.602Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
               "Title": "worker.h",
-              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\worker.h",
+              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\worker.h",
               "RelativeDocumentMoniker": "Common\\worker.h",
-              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\worker.h",
+              "ToolTip": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\worker.h",
               "RelativeToolTip": "Common\\worker.h",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAYAAAAAAAAAA==",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAtwBkAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-02-06T14:45:05.074Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "list.cpp",
-              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\list.cpp",
-              "RelativeDocumentMoniker": "Common\\list.cpp",
-              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\list.cpp",
-              "RelativeToolTip": "Common\\list.cpp",
-              "ViewState": "AgIAADwAAAAAAAAAAAAtwE4AAAASAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-01-27T22:56:57.976Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "list.h",
-              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\list.h",
-              "RelativeDocumentMoniker": "Common\\list.h",
-              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\list.h",
-              "RelativeToolTip": "Common\\list.h",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAASAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-01-27T22:59:10.788Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-02T11:57:25.687Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 5,
               "Title": "worker.cpp",
-              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\worker.cpp",
+              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\worker.cpp",
               "RelativeDocumentMoniker": "Common\\worker.cpp",
-              "ToolTip": "C:\\Users\\Milan\\Desktop\\IKP\\IKP_PROJEKAT\\Common\\worker.cpp",
+              "ToolTip": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\worker.cpp",
               "RelativeToolTip": "Common\\worker.cpp",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAyAAAAAAAAAA==",
+              "ViewState": "AgIAABgAAAAAAAAAAAAYwCQAAAAXAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-01-27T22:55:32.008Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-02T11:53:12.824Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Worker.cpp",
+              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Worker\\Worker.cpp",
+              "RelativeDocumentMoniker": "Worker\\Worker.cpp",
+              "ToolTip": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Worker\\Worker.cpp",
+              "RelativeToolTip": "Worker\\Worker.cpp",
+              "ViewState": "AgIAABgAAAAAAAAAAAAAAD4AAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-02T11:52:45.664Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "list.cpp",
+              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\list.cpp",
+              "RelativeDocumentMoniker": "Common\\list.cpp",
+              "ToolTip": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\list.cpp",
+              "RelativeToolTip": "Common\\list.cpp",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-02T11:51:57.03Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "message.h",
+              "DocumentMoniker": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\message.h",
+              "RelativeDocumentMoniker": "Common\\message.h",
+              "ToolTip": "C:\\Users\\Milan\\Desktop\\ikp-pravi\\IKP_PROJEKAT\\Common\\message.h",
+              "RelativeToolTip": "Common\\message.h",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAAgAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2025-06-02T11:48:32.934Z"
             }
           ]
         }

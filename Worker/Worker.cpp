@@ -57,9 +57,9 @@ void processMessages(SOCKET workerSocket) {
 
         lock.unlock(); // Oslobađamo mutex pre obrade
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(30)); // Simulacija obrade ne radi ispod 30???
+        std::this_thread::sleep_for(std::chrono::milliseconds(5)); // Simulacija obrade ne radi ispod 30???
 
-        std::string response = "Podaci obradjeni: " + std::string(queueStoredBuffer);
+        std::string response = std::string(queueStoredBuffer);
         send(workerSocket, response.c_str(), response.size(), 0);
     }
 

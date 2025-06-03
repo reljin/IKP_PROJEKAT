@@ -3,7 +3,7 @@
 #include <cstring> // Za memcpy
 
 Worker* createWorker(int id) {
-    // Koristimo new umjesto malloc kako bismo pozvali konstruktore svih članova
+    // Alociramo Workera
     Worker* newWorker = new Worker;
     if (newWorker == nullptr) {
         std::cerr << "Greška pri alokaciji memorije za Workera." << std::endl;
@@ -12,21 +12,23 @@ Worker* createWorker(int id) {
 
     newWorker->id = id;
     newWorker->dataCount = 0;
-    newWorker->data = new Message * [MAX_DATA_SIZE];  // Koristimo new za niz poruka
 
+    // Alociramo niz pokazivača na Message (koristimo new[])
+    newWorker->data = new Message * [MAX_DATA_SIZE];
     if (newWorker->data == nullptr) {
         std::cerr << "Greška pri alokaciji memorije za niz poruka." << std::endl;
         delete newWorker;
         return nullptr;
     }
 
+    // Postavljamo sve elemente na nullptr
     for (int i = 0; i < MAX_DATA_SIZE; i++) {
         newWorker->data[i] = nullptr;
     }
 
-    newWorker->socketFd = -1; // Socket nije postavljen
+    newWorker->socketFd = -1;  // Inicijalno socket nije postavljen
 
-    // Ostali članovi (npr. newWorker->mtx) bit će automatski ispravno inicijalizirani
+    // Ostali članovi klase/strukture (mutex, sockaddr_in) će biti default-inicijalizovani
 
     return newWorker;
 }
@@ -80,16 +82,16 @@ Message* removeMessageFromWorker(Worker* worker) {
 
 // Funkcija za uništavanje Workera i oslobađanje memorije
 void destroyWorker(Worker* worker) {
-    if (worker == NULL) return;
+    if (worker == nullptr) return;
 
     for (int i = 0; i < worker->dataCount; i++) {
-        if (worker->data[i] != NULL) {
-            free(worker->data[i]);
+        if (worker->data[i] != nullptr) {
+            delete worker->data[i];  // Umesto free()
         }
     }
 
-    free(worker->data);
-    free(worker);
+    delete[] worker->data;  // Umesto free()
+    delete worker;          // Umesto free()
 }
 
 // Funkcija za ispis informacija o workeru

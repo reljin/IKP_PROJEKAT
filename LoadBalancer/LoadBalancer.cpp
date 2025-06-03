@@ -7,6 +7,8 @@
 #include "list.h"    // Ukoliko koristiš listu za skladištenje workera
 #include "queue.h"
 #include "Distributor.h"
+#include "message.h"
+#include "hashset.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -22,10 +24,18 @@ std::vector<SOCKET> clientSockets;
 int broj_obradjenih_poruka=0;
 int counter = 0;
 
-std::mutex workersMutex;  // Mutex za zaštitu liste workera
 Node* workers = NULL;
+std::mutex workersMutex;  // Mutex za zaštitu liste workera
+
 Queue* clientMessages = NULL;
 std::mutex clientMessageQueueMutex;
+
+int global_msg_id = 0;
+static std::mutex idMutex;
+
+std::mutex obradjeneLockMutex;
+
+Node* sentMessages = NULL;  // globalna lista svih poslatih poruka
 
 void printWorker(void* data) {
     Worker* worker = (Worker*)data;
@@ -48,23 +58,43 @@ void handleClient(SOCKET clientSocket) {
         int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
         if (bytesReceived <= 0) {
             if (bytesReceived == 0) {
-                printf("Klijent se diskonektovao.\n");
+                printf("LB: Klijent se diskonektovao (socket=%d)\n", (int)clientSocket);
             }
             else {
-                printf("Greška pri primanju podataka. Kod greške: %d\n", WSAGetLastError());
+                printf("LB: Greska pri primanju od klijenta %d, code=%d\n",
+                    (int)clientSocket, WSAGetLastError());
             }
             break;
         }
 
         buffer[bytesReceived] = '\0';
-        printf("Poruka od klijenta: %s\n", buffer);
+        printf("LB: Primljena poruka od klijenta (socket=%d) => content=\"%s\"\n",
+        (int)clientSocket, buffer);
+
+        Message msg;      
+
+        msg.content[BUFFER_SIZE - 1] = '\0';  // just in case
+        strncpy_s(msg.content, buffer, sizeof(msg.content) - 1);
+
+        // If client sent msg_id=0, assign a new one (otherwise respect any ID the client included)
+
+        {
+            std::lock_guard<std::mutex> lock(idMutex);
+            msg.msg_id = global_msg_id++;
+
+        }
+        msg.clientSocket = clientSocket;
+        msg.type = TEXT_MESSAGE;
+
         {
             std::lock_guard<std::mutex> lock(clientMessageQueueMutex);
-            enqueue(clientMessages, buffer);
+            enqueue(clientMessages, &msg);
         }
         
 
         Worker* mostFreeWorker = nullptr;
+
+        
 
         if (workers != NULL) {
             {
@@ -75,11 +105,17 @@ void handleClient(SOCKET clientSocket) {
 
             if (mostFreeWorker != nullptr) {
                 sendDataToWorker(mostFreeWorker, clientMessages);
+
+                Message* copy = (Message*)malloc(sizeof(Message));
+                memcpy(copy, &msg, sizeof(Message));  // napravi kopiju poslate poruke
+                insertAtEnd(&sentMessages, copy, sizeof(Message));
             }
         }
-
-        std::string response = "Poruka primljena: " + std::string(buffer);
-        send(clientSocket, response.c_str(), static_cast<int>(response.size()), 0);
+        //ACK back to client that we received it
+        char shortAck[BUFFER_SIZE];
+        snprintf(shortAck, sizeof(shortAck),
+            "LB primio msg_id=%d", msg.msg_id);
+        send(clientSocket, shortAck, (int)strlen(shortAck), 0);
     }
 
     closesocket(clientSocket);
@@ -128,18 +164,43 @@ void handleWorkerResponse(Worker* worker) {
             }
             break;  // Prekidamo petlju ako dođe do greške ili diskonektovanja
         }
-        removeMessageFromWorker(worker);
         buffer[bytesReceived] = '\0';
-        printf("Worker ID%d: %s\n", worker->id, buffer);
+        printf("Worker ID%d response: %s\n", worker->id, buffer);
 
-        std::mutex obradjeneLockMutex;
-        {
-            std::lock_guard<std::mutex> lock(obradjeneLockMutex);
-            printf("Broj obradjenih poruka %d\n", ++broj_obradjenih_poruka);
+        Message* finished = removeMessageFromWorker(worker);
+        if (finished) {
+
+            //Provera dal je id poruke dodat u hashset, ako jeste onda je poruka obradjena i ipak ne treba opet da se salje
+
+            if (hashset_contains(finished->msg_id)) {
+                printf("LB: msg_id=%d je već obrađena. Preskačem.\n", finished->msg_id);
+                free(finished);
+                continue;
+            }
+
+            // ACK originalnom klijentu
+            char ackBuffer[BUFFER_SIZE];
+            snprintf(ackBuffer, sizeof(ackBuffer),
+                "msg_id=%d obradjeno: %s",
+                finished->msg_id, finished->content);
+
+            send(finished->clientSocket, ackBuffer, (int)strlen(ackBuffer), 0);
+
+            // Zabeleži kao obrađenu
+            hashset_add(finished->msg_id);
+
+            {
+                std::lock_guard<std::mutex> lock(obradjeneLockMutex);
+                broj_obradjenih_poruka++;
+                printf("LB: Ukupno obradjeno poruka = %d\n", broj_obradjenih_poruka);
+            }
+
+            free(finished);
         }
-      
-        // Ovdje možeš dodati logiku za dalje prosleđivanje odgovora,
-        // npr. do klijenta ili za logovanje.
+        else {
+            printf("LB: (warning) no in flight message to pop for Worker ID=%d\n", worker->id);
+        }
+
     }
 
 
@@ -151,7 +212,7 @@ void handleWorkerResponse(Worker* worker) {
             Message* msg = removeMessageFromWorker(worker);  
             if (msg == NULL) break;  
             printf("Poruka vracena u queue: %s\n", msg->content);
-            enqueue(clientMessages, msg->content);
+            enqueue(clientMessages, msg);
             free(msg);
             
         }
@@ -169,6 +230,8 @@ void handleWorkerResponse(Worker* worker) {
         redistributeMessages(clientMessages, workers);
     }
     //displayList(workers, printWorker);
+
+    printf("LB: handleWorkerResponse thread for Worker ID=%d ended.\n", worker->id);
 
 }
 
@@ -216,6 +279,38 @@ void workerListener(SOCKET workerListenSocket) {
 
         std::thread(handleWorkerResponse, newWorker).detach();
 
+    }
+}
+
+void sendMessageToWorker(Worker* worker, Message* msg) {
+    send(worker->socketFd, msg->content, (int)strlen(msg->content), 0);
+    addMessageToWorker(worker, msg);  // Ako koristiš ovu funkciju za tracking
+}
+
+void retryUnacknowledgedMessages() {
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::seconds(5));  // Proverava svakih 5 sekundi
+
+        std::lock_guard<std::mutex> lock(clientMessageQueueMutex);  // Pristup sentMessages i redovima
+        Node* current = sentMessages;
+        while (current != NULL) {
+            Message* msg = (Message*)current->data;
+            if (!hashset_contains(msg->msg_id)) {
+                printf("RETRY: msg_id=%d nije potvrđen, ponovo šaljem poruku: \"%s\"\n", msg->msg_id, msg->content);
+
+                Worker* targetWorker = nullptr;
+                {
+                    std::lock_guard<std::mutex> lock(workersMutex);
+                    targetWorker = findMostFreeWorker(workers);
+                }
+
+                if (targetWorker != nullptr) {
+                    // Možeš direktno slati poruku ovom workeru
+                    sendMessageToWorker(targetWorker, msg);
+                }
+            }
+            current = current->next;
+        }
     }
 }
 
@@ -289,6 +384,7 @@ int main() {
 
     std::thread(clientListener, clientListenSocket).detach();
     std::thread(workerListener, workerListenSocket).detach();
+    std::thread(retryUnacknowledgedMessages).detach();
 
     while (true) {
         //printf("Load Balancer radi druge poslove...\n");
