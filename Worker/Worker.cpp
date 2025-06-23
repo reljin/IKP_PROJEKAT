@@ -21,6 +21,7 @@ std::mutex receivedMessagesQueueMutex;
 std::condition_variable receivedMessagesQueueCV;
 Queue* receivedMessagesQueue = nullptr;
 std::atomic<bool> stopWorker(false);
+SOCKET replicatorSocket; //socket ka replikatoru
 
 // Funkcija za čuvanje podataka u fajl
 void saveData(const char* buffer) {
@@ -61,6 +62,9 @@ void processMessages(SOCKET workerSocket) {
 
         std::string response = std::string(queueStoredBuffer);
         send(workerSocket, response.c_str(), response.size(), 0);
+
+        //slanje replikatoru
+        send(replicatorSocket, response.c_str(), response.size(), 0);
     }
 
     free(queueStoredBuffer);
@@ -97,6 +101,7 @@ void handleWorker(SOCKET workerSocket) {
 
     processingThread.join();
     closesocket(workerSocket);
+    closesocket(replicatorSocket); // zatvaranje socket-a ka replikatoru
 
     {
         std::lock_guard<std::mutex> lock(receivedMessagesQueueMutex);
@@ -145,6 +150,24 @@ int main() {
         closesocket(workerSocket);
         WSACleanup();
         return 1;
+    }
+
+    //povezivanje sa replikatorom
+    replicatorSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (replicatorSocket == INVALID_SOCKET) {
+        printf("Greška pri kreiranju socket-a za replikator.\n");
+    } else {
+        sockaddr_in replAddr;
+        replAddr.sin_family = AF_INET;
+        replAddr.sin_port = htons(REPLICATOR_PORT);
+        inet_pton(AF_INET, "127.0.0.1", &replAddr.sin_addr);
+
+        if (connect(replicatorSocket, (sockaddr*)&replAddr, sizeof(replAddr)) == SOCKET_ERROR) {
+            printf("Neuspela konekcija na replikator.\n");
+            closesocket(replicatorSocket);
+        } else {
+            printf("Povezan sa replikatorom.\n");
+        }
     }
 
     printf("Worker povezan sa Load Balancerom na portu: %d\n", SERVER_PORT_WORKER);
