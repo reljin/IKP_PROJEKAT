@@ -23,7 +23,6 @@ void printMessageData(void* data) {
     printf("%s ", (char*)data);
 }
 
-// Nit TR – prima podatke od workera i smešta ih u replicationQueue
 void receiveAndStoreFromWorker(SOCKET workerSocket) {
     char buffer[BUFFER_SIZE];
 
@@ -33,7 +32,7 @@ void receiveAndStoreFromWorker(SOCKET workerSocket) {
 
         buffer[bytesReceived] = '\0';
 
-        // Dodavanje prefiksa "R|"
+      
         std::string prefixed = "R|" + std::string(buffer);
 
         {
@@ -41,11 +40,11 @@ void receiveAndStoreFromWorker(SOCKET workerSocket) {
 
             char* prefixedCopy = (char*)malloc(BUFFER_SIZE);
             if (!prefixedCopy) {
-                printf("Greška pri alokaciji memorije za prefiks poruke.\n");
+                printf("Greska pri alokaciji memorije za prefiks poruke.\n");
                 continue;
             }
 
-            strncpy(prefixedCopy, prefixed.c_str(), BUFFER_SIZE - 1);
+            strncpy_s(prefixedCopy, BUFFER_SIZE, prefixed.c_str(), _TRUNCATE);
             prefixedCopy[BUFFER_SIZE - 1] = '\0';
 
             enqueue(replicationQueue, prefixedCopy);
@@ -54,8 +53,8 @@ void receiveAndStoreFromWorker(SOCKET workerSocket) {
 
         queueCV.notify_one();
 
-        printf("[Replikator] Poruka uspešno replikovana: %s\n", prefixed.c_str());
-        printf("[Replikator] Trenutni sadržaj replicationQueue: ");
+        printf("[Replikator] Poruka uspesno replikovana: %s\n", prefixed.c_str());
+        printf("[Replikator] Trenutni sadrzaj replicationQueue: ");
         displayList(replicationQueue->front, printMessageData);
         printf("\n");
     }
@@ -66,20 +65,20 @@ void receiveAndStoreFromWorker(SOCKET workerSocket) {
 int main() {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        printf("Greška pri inicijalizaciji Winsock-a.\n");
+        printf("Greska pri inicijalizaciji Winsock-a.\n");
         return 1;
     }
 
     replicationQueue = createQueue(BUFFER_SIZE);
     if (!replicationQueue) {
-        printf("Greška pri kreiranju replication queue.\n");
+        printf("Greska pri kreiranju replication queue.\n");
         WSACleanup();
         return 1;
     }
 
     SOCKET serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket == INVALID_SOCKET) {
-        printf("Greška pri kreiranju socket-a.\n");
+        printf("Greska pri kreiranju socket-a.\n");
         WSACleanup();
         return 1;
     }
@@ -90,20 +89,20 @@ int main() {
     serverAddress.sin_port = htons(REPLICATOR_PORT);
 
     if (bind(serverSocket, (sockaddr*)&serverAddress, sizeof(serverAddress)) == SOCKET_ERROR) {
-        printf("Greška pri bindovanju.\n");
+        printf("Greska pri bindovanju.\n");
         closesocket(serverSocket);
         WSACleanup();
         return 1;
     }
 
     if (listen(serverSocket, SOMAXCONN) == SOCKET_ERROR) {
-        printf("Greška pri slušanju.\n");
+        printf("Greska pri slušanju.\n");
         closesocket(serverSocket);
         WSACleanup();
         return 1;
     }
 
-    printf("Replikator čeka konekcije na portu %d...\n", REPLICATOR_PORT);
+    printf("Replikator ceka konekcije na portu %d...\n", REPLICATOR_PORT);
 
     while (true) {
         sockaddr_in clientAddr;

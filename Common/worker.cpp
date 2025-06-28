@@ -1,102 +1,89 @@
 ﻿#include "worker.h"
 #include <iostream>
-#include <cstring> // Za memcpy
+#include <cstring> 
 
 Worker* createWorker(int id) {
-    // Alociramo Workera
+
     Worker* newWorker = new Worker;
     if (newWorker == nullptr) {
-        std::cerr << "Greška pri alokaciji memorije za Workera." << std::endl;
+        printf("Greska pri alokaciji memorije za workera.\n");
         return nullptr;
     }
 
     newWorker->id = id;
     newWorker->dataCount = 0;
 
-    // Alociramo niz pokazivača na Message (koristimo new[])
     newWorker->data = new Message * [MAX_DATA_SIZE];
     if (newWorker->data == nullptr) {
-        std::cerr << "Greška pri alokaciji memorije za niz poruka." << std::endl;
+        printf("Greska pri alokaciji memorije za niz poruka.\n");
         delete newWorker;
         return nullptr;
     }
 
-    // Postavljamo sve elemente na nullptr
     for (int i = 0; i < MAX_DATA_SIZE; i++) {
         newWorker->data[i] = nullptr;
     }
 
-    newWorker->socketFd = -1;  // Inicijalno socket nije postavljen
-
-    // Ostali članovi klase/strukture (mutex, sockaddr_in) će biti default-inicijalizovani
+    newWorker->socketFd = -1;
 
     return newWorker;
 }
 
-// Funkcija za dodavanje nove poruke (FIFO podržano)
+//zakljucavanje je vec ubaceno!!!
 bool addMessageToWorker(Worker* worker, const Message* newMessage) {
     std::lock_guard<std::mutex> lock(worker->mtx);
 
-    // Proveravamo da li je worker pun
     if (worker->dataCount >= MAX_DATA_SIZE) {
-        std::cerr << "Nema dovoljno prostora za novu poruku." << std::endl;
+        printf("Nema dovoljno prostora za novu poruku.\n");
         return false;
     }
 
-    // Alociramo novu poruku
     worker->data[worker->dataCount] = (Message*)malloc(sizeof(Message));
     if (worker->data[worker->dataCount] == NULL) {
-        std::cerr << "Greška pri alokaciji memorije za novu poruku." << std::endl;
+        printf("Greska pri alokaciji memorije za novu poruku.\n");
         return false;
     }
 
-    // Kopiramo sadržaj poruke
     memcpy(worker->data[worker->dataCount], newMessage, sizeof(Message));
     worker->dataCount++;
 
     return true;
 }
 
-// Funkcija za uklanjanje poruke (FIFO - prva poruka koja je stigla)
 Message* removeMessageFromWorker(Worker* worker) {
     std::lock_guard<std::mutex> lock(worker->mtx);
 
     if (worker->dataCount == 0) {
-        //std::cerr << "Nema poruka za uklanjanje." << std::endl;
+
         return NULL;
     }
-
-    // Prva poruka (FIFO)
     Message* removedMessage = worker->data[0];
 
-    // Pomeramo sve ostale poruke unapred
     for (int i = 1; i < worker->dataCount; i++) {
         worker->data[i - 1] = worker->data[i];
     }
 
-    worker->data[worker->dataCount - 1] = NULL; // Poslednji element sada je prazan
+    worker->data[worker->dataCount - 1] = NULL;
     worker->dataCount--;
 
-    return removedMessage; // Korisnik mora osloboditi ovu memoriju nakon obrade
+    return removedMessage;
 }
 
-// Funkcija za uništavanje Workera i oslobađanje memorije
 void destroyWorker(Worker* worker) {
     if (worker == nullptr) return;
 
     for (int i = 0; i < worker->dataCount; i++) {
         if (worker->data[i] != nullptr) {
-            delete worker->data[i];  // Umesto free()
+            delete worker->data[i];
         }
     }
 
-    delete[] worker->data;  // Umesto free()
-    delete worker;          // Umesto free()
+    delete[] worker->data;
+    delete worker;
 }
 
-// Funkcija za ispis informacija o workeru
 void printWorkerInfo(const Worker* worker) {
-    printf("Worker ID: %d\n", worker->id);
+    printf("ID workera: %d\n", worker->id);
     printf("Broj poruka: %d\n", worker->dataCount);
     printf("Maksimalan broj poruka: %d\n", MAX_DATA_SIZE);
     printf("Socket FD: %d\n", worker->socketFd);

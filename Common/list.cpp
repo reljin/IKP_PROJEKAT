@@ -3,27 +3,24 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-// Funkcija za kreiranje novog čvora koja čuva originalni pokazivač
 Node* createNode(void* value) {
-    Node* newNode = (Node*)malloc(sizeof(Node)); //zauzeta 
+    Node* newNode = (Node*)malloc(sizeof(Node)); 
     if (newNode == NULL) {
-        printf("Greška: Nema dovoljno memorije!\n");
+        printf("Greska: Nema dovoljno memorije!\n");
         return NULL;
     }
-    // Umesto kopiranja, samo dodeljujemo pokazivač
+  
     newNode->data = value;
     newNode->next = NULL;
     return newNode;
 }
 
-// Funkcija za umetanje elementa na kraj liste
-// Parametar dataSize ostaje radi kompatibilnosti, ali se ne koristi
 void insertAtEnd(Node** head, void* value, size_t dataSize) {
     Node* newNode = createNode(value);
     if (newNode == NULL)
         return;
 
-    if (*head == NULL) {  // Ako je lista prazna
+    if (*head == NULL) {  
         *head = newNode;
         return;
     }
@@ -35,7 +32,7 @@ void insertAtEnd(Node** head, void* value, size_t dataSize) {
     temp->next = newNode;
 }
 
-// Funkcija za umetanje elementa na početak liste
+
 void insertAtBeginning(Node** head, void* value, size_t dataSize) {
     Node* newNode = createNode(value);
     if (newNode == NULL)
@@ -45,8 +42,7 @@ void insertAtBeginning(Node** head, void* value, size_t dataSize) {
     *head = newNode;
 }
 
-// Funkcija za brisanje čvora sa zadatom vrednošću (pretraga po podacima (posledji argument je za prosledjivanje f-je dal trazim po id-u ili po pokazivacu))
-// Ova verzija ne oslobadja memoriju podataka (newNode->data) jer lista samo čuva originalni pokazivač.
+
 void deleteNode(Node** head, void* value, size_t dataSize, int (*cmp)(void*, void*)) {
     if (*head == NULL) {
         printf("Lista je prazna!\n");
@@ -54,7 +50,7 @@ void deleteNode(Node** head, void* value, size_t dataSize, int (*cmp)(void*, voi
     }
 
     Node* temp = *head;
-    if (cmp(temp->data, value) == 0) {  // Ako je prvi čvor taj koji treba obrisati
+    if (cmp(temp->data, value) == 0) {  
         *head = temp->next;
         free(temp);
         return;
@@ -66,7 +62,7 @@ void deleteNode(Node** head, void* value, size_t dataSize, int (*cmp)(void*, voi
         temp = temp->next;
     }
 
-    if (temp == NULL) {  // Ako element nije pronađen
+    if (temp == NULL) {  
         printf("Element nije pronadjen u listi!\n");
         return;
     }
@@ -75,7 +71,7 @@ void deleteNode(Node** head, void* value, size_t dataSize, int (*cmp)(void*, voi
     free(temp);
 }
 
-// Funkcija za vraćanje veličine liste
+
 size_t getListSize(Node* head) {
     size_t size = 0;
     Node* current = head;

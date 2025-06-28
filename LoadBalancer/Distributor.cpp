@@ -53,24 +53,22 @@ void sendDataToWorker(Worker* worker, Queue* clientMessages) {
 }
 
 
-// Pomocna funkcija za slanje FREE_QUEUE komande pojedinačnom workeru
+
 void sendFreeQueueCommandToWorker(Worker* worker) {
-    const char* freeQueueCommand = "FREE_QUEUE";
-    // Pretpostavljamo da Worker ima polje socket (worker->socket)
+    const char* freeQueueCommand = "FREE_QUEUE"; 
     send(worker->socketFd, freeQueueCommand, strlen(freeQueueCommand), 0);
     
 }
 
 void redistributeMessages(Queue* clientMessages, Node* workers) {
 
-    // 3. Slanje FREE_QUEUE komande svim workerima
+    //Slanje FREE_QUEUE komande svim workerima
     {
-        //std::lock_guard<std::mutex> lock(workersMutex);  // Zaključaj listu workera
+
         Node* current = workers;
         while (current != NULL) {
             Worker* worker = (Worker*)current->data;
             {
-                // Pošalji pojedinačnom workeru poruku FREE_QUEUE
                 sendFreeQueueCommandToWorker(worker);
             }
             current = current->next;
@@ -78,14 +76,14 @@ void redistributeMessages(Queue* clientMessages, Node* workers) {
     }
 
 
-    // 1. SKLAPANJE: Prikupi sve neobrađene poruke sa svih workera i prebaci ih u clientMessages
+    //Prikupi sve neobrađene poruke sa svih workera i prebaci ih u clientMessages
     {
-        //std::lock_guard<std::mutex> lock(workersMutex);  // Zaključaj listu workera
+       
         Node* current = workers;
         while (current != NULL) {
             Worker* worker = (Worker*)current->data;
             {
-                // Zaključaj rad s porukama unutar workera
+             
                 while (worker->dataCount > 0) {
                     Message* msgPtr = removeMessageFromWorker(worker);
                     if (msgPtr != NULL) {
@@ -93,7 +91,7 @@ void redistributeMessages(Queue* clientMessages, Node* workers) {
                             std::lock_guard<std::mutex> queueLock(clientMessageQueueMutex);
                             enqueue(clientMessages, msgPtr->content);
                         }
-                        free(msgPtr);  // Oslobodi memoriju poruke (alocirana u addMessageToWorker)
+                        free(msgPtr); 
                     }
                 }
             }
@@ -101,10 +99,10 @@ void redistributeMessages(Queue* clientMessages, Node* workers) {
         }
     }
 
-    // 2. Redistribucija poruka: Uzimanje poruka iz clientMessages i slanje najraspoloživijem worker-u
+    //Uzimanje poruka iz clientMessages i slanje najraspolozivijem worker-u
     while (true) {
         {
-            // Provjeri da li je red prazan
+      
             std::lock_guard<std::mutex> queueLock(clientMessageQueueMutex);
             if (isEmpty(clientMessages)) {
                 break;
@@ -113,7 +111,7 @@ void redistributeMessages(Queue* clientMessages, Node* workers) {
 
         Worker* bestWorker = nullptr;
         {
-            //std::lock_guard<std::mutex> lock(workersMutex);
+       
             bestWorker = findMostFreeWorker(workers);
         }
 
@@ -122,7 +120,6 @@ void redistributeMessages(Queue* clientMessages, Node* workers) {
             break;
         }
 
-        // Funkcija sendDataToWorker zaključava clientMessageQueueMutex, uzima poruku i šalje je workeru
         sendDataToWorker(bestWorker, clientMessages);
     }
 

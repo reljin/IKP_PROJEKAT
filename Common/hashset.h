@@ -1,7 +1,7 @@
 #ifndef HASHSET_H
 #define HASHSET_H
 
-#define HASH_TABLE_SIZE 1031  // prost broj za disperziju
+#define HASH_TABLE_SIZE 1031  
 
 typedef struct HashNode {
     int value;
