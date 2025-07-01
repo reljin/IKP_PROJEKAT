@@ -8,7 +8,6 @@
 #include "queue.h"
 #include "Distributor.h"
 #include "message.h"
-#include "hashset.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -35,7 +34,6 @@ static std::mutex idMutex;
 
 std::mutex obradjeneLockMutex;
 
-Node* sentMessages = NULL;  
 
 void printWorker(void* data) {
     Worker* worker = (Worker*)data;
@@ -68,7 +66,7 @@ void handleClient(SOCKET clientSocket) {
         }
 
         buffer[bytesReceived] = '\0';
-        printf("LB: Primljena poruka od klijenta (socket=%d) => content=\"%s\"\n",
+        printf("LB: Primljena poruka od klijenta (socket=%d) => content=\"%s\"\n\n",
         (int)clientSocket, buffer);
 
         Message msg;      
@@ -105,9 +103,6 @@ void handleClient(SOCKET clientSocket) {
             if (mostFreeWorker != nullptr) {
                 sendDataToWorker(mostFreeWorker, clientMessages);
 
-                Message* copy = (Message*)malloc(sizeof(Message));
-                memcpy(copy, &msg, sizeof(Message)); 
-                insertAtEnd(&sentMessages, copy, sizeof(Message));
             }
         }
      
@@ -149,6 +144,33 @@ void clientListener(SOCKET clientListenSocket) {
     }
 }
 
+void deleteWorkerNode(Node** head, Worker* worker) {
+    Node* current = *head;
+    Node* prev = nullptr;
+
+    while (current != nullptr) {
+        if ((Worker*)current->data == worker) {
+            // Izbaci čvor iz liste
+            if (prev == nullptr) {
+                *head = current->next;
+            }
+            else {
+                prev->next = current->next;
+            }
+
+            // Prvo oslobodi Worker resurse
+            destroyWorker(worker);
+
+            // Oslobodi Node strukturu
+            free(current);
+
+            return;
+        }
+        prev = current;
+        current = current->next;
+    }
+}
+
 void handleWorkerResponse(Worker* worker) {
     char buffer[BUFFER_SIZE];
     while (true) {
@@ -159,32 +181,22 @@ void handleWorkerResponse(Worker* worker) {
             }
             else {
                 printf("Greska pri primanju odgovora od workera ID%d. Kod greske: %d\n", worker->id, WSAGetLastError());
-                break;
             }
-            break;  
+            break;
         }
+
         buffer[bytesReceived] = '\0';
         printf("Worker ID%d response: %s\n", worker->id, buffer);
 
         Message* finished = removeMessageFromWorker(worker);
-        if (finished) {           
-
-            if (hashset_contains(finished->msg_id)) {
-                printf("LB: msg_id=%d je vec obradjena. Preskacem.\n", finished->msg_id);
-                free(finished);
-                continue;
-            }
-
-            
+        if (finished) {
+           
             char ackBuffer[BUFFER_SIZE];
             snprintf(ackBuffer, sizeof(ackBuffer),
                 "msg_id=%d obradjeno: %s",
                 finished->msg_id, finished->content);
 
             send(finished->clientSocket, ackBuffer, (int)strlen(ackBuffer), 0);
-
-        
-            hashset_add(finished->msg_id);
 
             {
                 std::lock_guard<std::mutex> lock(obradjeneLockMutex);
@@ -196,38 +208,35 @@ void handleWorkerResponse(Worker* worker) {
         }
         else {
             printf("LB: (warning) no in flight message to pop for Worker ID=%d\n", worker->id);
-        }
-
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(clientMessageQueueMutex); 
-
-        while (true) {
-            Message* msg = removeMessageFromWorker(worker);  
-            if (msg == NULL) break;  
-            printf("Poruka vracena u queue: %s\n", msg->content);
-            enqueue(clientMessages, msg);
-            free(msg);
             
         }
     }
 
     {
-        std::lock_guard<std::mutex> lock(workersMutex);  
-        deleteNode(&workers, worker, sizeof(Worker), compareWorkersByPointer);
-        
+        std::lock_guard<std::mutex> lock(clientMessageQueueMutex);
+        while (true) {
+            Message* msg = removeMessageFromWorker(worker);
+            if (msg == NULL) break;
+            printf("Poruka vracena u queue: %s\n", msg->content);
+            enqueue(clientMessages, msg);
+            free(msg);
+        }
     }
-    destroyWorker(worker);
+
+
+    {
+        std::lock_guard<std::mutex> lock(workersMutex);
+        deleteWorkerNode(&workers, worker);
+    }
+
+ 
 
     {
         std::lock_guard<std::mutex> lock(workersMutex);
         redistributeMessages(clientMessages, workers);
     }
-    
 
     printf("LB: handleWorkerResponse thread for Worker ID=%d ended.\n", worker->id);
-
 }
 
 #include <chrono>     
@@ -277,37 +286,7 @@ void workerListener(SOCKET workerListenSocket) {
     }
 }
 
-void sendMessageToWorker(Worker* worker, Message* msg) {
-    send(worker->socketFd, msg->content, (int)strlen(msg->content), 0);
-    addMessageToWorker(worker, msg); 
-}
 
-void retryUnacknowledgedMessages() {
-    while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(5)); 
-
-        std::lock_guard<std::mutex> lock(clientMessageQueueMutex);  
-        Node* current = sentMessages;
-        while (current != NULL) {
-            Message* msg = (Message*)current->data;
-            if (!hashset_contains(msg->msg_id)) {
-                printf("RETRY: msg_id=%d nije potvrdjen, ponovo saljem poruku: \"%s\"\n", msg->msg_id, msg->content);
-
-                Worker* targetWorker = nullptr;
-                {
-                    std::lock_guard<std::mutex> lock(workersMutex);
-                    targetWorker = findMostFreeWorker(workers);
-                }
-
-                if (targetWorker != nullptr) {
-             
-                    sendMessageToWorker(targetWorker, msg);
-                }
-            }
-            current = current->next;
-        }
-    }
-}
 
 int main() {
     WSADATA wsaData;
@@ -379,10 +358,10 @@ int main() {
 
     std::thread(clientListener, clientListenSocket).detach();
     std::thread(workerListener, workerListenSocket).detach();
-    std::thread(retryUnacknowledgedMessages).detach();
+
 
     while (true) {
-        //printf("Load Balancer radi druge poslove...\n");
+     
         std::this_thread::sleep_for(std::chrono::seconds(1000));
     }
 

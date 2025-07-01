@@ -57,7 +57,7 @@ void sendMessages(SOCKET clientSocket) {
         for (int i = 1; i <= expectedAcks; ++i) {
             std::string message = generateRandomMessage(i);
             message += "\n";
-            std::this_thread::sleep_for(std::chrono::microseconds(2));
+            std::this_thread::sleep_for(std::chrono::microseconds(75));
 
             int sz = (int)message.size();
             if (send(clientSocket, message.c_str(), sz, 0) == SOCKET_ERROR) {

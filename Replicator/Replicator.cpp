@@ -7,6 +7,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <fstream>
+#include <iostream>
 #include "../Common/queue.h"
 
 #pragma comment(lib, "ws2_32.lib")
@@ -21,6 +23,17 @@ std::atomic<bool> stopReplikator(false);
 
 void printMessageData(void* data) {
     printf("%s ", (char*)data);
+    printf("\n");
+}
+
+void saveData(const char* buffer) {
+    std::ofstream file("replicatorOutput.txt", std::ios::app);
+    if (!file) {
+        std::cerr << "Greška pri otvaranju fajla." << std::endl;
+        return;
+    }
+    file << buffer << std::endl;
+    file.close();
 }
 
 void receiveAndStoreFromWorker(SOCKET workerSocket) {
@@ -33,7 +46,7 @@ void receiveAndStoreFromWorker(SOCKET workerSocket) {
         buffer[bytesReceived] = '\0';
 
       
-        std::string prefixed = "R|" + std::string(buffer);
+        std::string prefixed = "Replikator primio poruku: " + std::string(buffer);
 
         {
             std::lock_guard<std::mutex> lock(queueMutex);
@@ -54,9 +67,12 @@ void receiveAndStoreFromWorker(SOCKET workerSocket) {
         queueCV.notify_one();
 
         printf("[Replikator] Poruka uspesno replikovana: %s\n", prefixed.c_str());
-        printf("[Replikator] Trenutni sadrzaj replicationQueue: ");
-        displayList(replicationQueue->front, printMessageData);
-        printf("\n");
+        //printf("[Replikator] Trenutni sadrzaj replicationQueue: ");
+        //displayList(replicationQueue->front, printMessageData);
+        //printf("\n");
+        std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Simulacija obrade ne radi iznad 30???
+
+        saveData(buffer);
     }
 
     closesocket(workerSocket);

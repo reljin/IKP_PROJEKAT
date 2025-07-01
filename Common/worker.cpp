@@ -1,10 +1,10 @@
 ﻿#include "worker.h"
-#include <iostream>
-#include <cstring> 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 Worker* createWorker(int id) {
-
-    Worker* newWorker = new Worker;
+    Worker* newWorker = new Worker(); // koristi new, ne malloc
     if (newWorker == nullptr) {
         printf("Greska pri alokaciji memorije za workera.\n");
         return nullptr;
@@ -12,11 +12,12 @@ Worker* createWorker(int id) {
 
     newWorker->id = id;
     newWorker->dataCount = 0;
+    newWorker->socketFd = -1;
 
-    newWorker->data = new Message * [MAX_DATA_SIZE];
+    newWorker->data = (Message**)malloc(sizeof(Message*) * MAX_DATA_SIZE);
     if (newWorker->data == nullptr) {
         printf("Greska pri alokaciji memorije za niz poruka.\n");
-        delete newWorker;
+        delete newWorker;  // koristi delete
         return nullptr;
     }
 
@@ -24,12 +25,9 @@ Worker* createWorker(int id) {
         newWorker->data[i] = nullptr;
     }
 
-    newWorker->socketFd = -1;
-
     return newWorker;
 }
 
-//zakljucavanje je vec ubaceno!!!
 bool addMessageToWorker(Worker* worker, const Message* newMessage) {
     std::lock_guard<std::mutex> lock(worker->mtx);
 
@@ -54,9 +52,9 @@ Message* removeMessageFromWorker(Worker* worker) {
     std::lock_guard<std::mutex> lock(worker->mtx);
 
     if (worker->dataCount == 0) {
-
         return NULL;
     }
+
     Message* removedMessage = worker->data[0];
 
     for (int i = 1; i < worker->dataCount; i++) {
@@ -74,12 +72,12 @@ void destroyWorker(Worker* worker) {
 
     for (int i = 0; i < worker->dataCount; i++) {
         if (worker->data[i] != nullptr) {
-            delete worker->data[i];
+            free(worker->data[i]);
         }
     }
 
-    delete[] worker->data;
-    delete worker;
+    free(worker->data);
+    delete worker; // koristi delete, jer si koristio new
 }
 
 void printWorkerInfo(const Worker* worker) {

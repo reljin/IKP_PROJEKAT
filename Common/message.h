@@ -39,4 +39,6 @@ typedef struct Message {
     char       content[BUFFER_SIZE];
 } Message;
 
+int compareMessagesById(void* a, void* b);
+
 #endif // MESSAGE_H

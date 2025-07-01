@@ -26,7 +26,7 @@ SOCKET replicatorSocket;
 
 
 void saveData(const char* buffer) {
-    std::ofstream file("output.txt", std::ios::app); 
+    std::ofstream file("workerOutput.txt", std::ios::app); 
     if (!file) {
         std::cerr << "Greška pri otvaranju fajla." << std::endl;
         return;
@@ -59,9 +59,9 @@ void processMessages(SOCKET workerSocket) {
 
         lock.unlock(); 
 
-        //saveData(queueStoredBuffer)
+        saveData(queueStoredBuffer);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(5)); // Simulacija obrade ne radi iznad 30???
+        std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Simulacija obrade ne radi iznad 30???
 
         std::string response = std::string(queueStoredBuffer);
         send(workerSocket, response.c_str(), response.size(), 0);
@@ -75,23 +75,43 @@ void processMessages(SOCKET workerSocket) {
 
 void receiveData(SOCKET workerSocket) {
     char buffer[BUFFER_SIZE];
+    std::string leftover;  // čuva fragment nedovršene poruke
 
     while (true) {
         int bytesReceived = recv(workerSocket, buffer, sizeof(buffer) - 1, 0);
-        if (bytesReceived <= 0) break; 
+        if (bytesReceived <= 0)
+            break;
 
         buffer[bytesReceived] = '\0';
+        leftover += buffer;
 
-        {
-            std::lock_guard<std::mutex> lock(receivedMessagesQueueMutex);
-            if (strcmp(buffer, "FREE_QUEUE") == 0) {
-                printf("FREE_QUEUE\n");
-                clearQueue(receivedMessagesQueue);
-                continue; 
+        size_t pos;
+        while ((pos = leftover.find('\n')) != std::string::npos) {
+            std::string oneMessage = leftover.substr(0, pos);
+            leftover.erase(0, pos + 1);
+
+            {
+                std::lock_guard<std::mutex> lock(receivedMessagesQueueMutex);
+
+                if (oneMessage == "FREE_QUEUE") {
+                    printf("FREE_QUEUE\n");
+                    clearQueue(receivedMessagesQueue);
+                    continue;
+                }
+
+                // Alociraj mutable bafer i kopiraj poruku
+                char* msgBuf = (char*)malloc(oneMessage.size() + 1);
+                if (!msgBuf) {
+                    fprintf(stderr, "Greška pri alokaciji memorije za poruku\n");
+                    continue;
+                }
+                memcpy(msgBuf, oneMessage.c_str(), oneMessage.size() + 1);
+
+                enqueue(receivedMessagesQueue, msgBuf);
             }
-            enqueue(receivedMessagesQueue, buffer);
+
+            receivedMessagesQueueCV.notify_one();
         }
-        receivedMessagesQueueCV.notify_one();
     }
 
     stopWorker.store(true);

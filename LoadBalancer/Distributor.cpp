@@ -32,17 +32,19 @@ void sendDataToWorker(Worker* worker, Queue* clientMessages) {
         return;
     }
 
-    Message msg;
+    Message localMsg;
     {
         std::lock_guard<std::mutex> lock(clientMessageQueueMutex);
-        dequeue(clientMessages, &msg);
+        dequeue(clientMessages, &localMsg);
     }
 
     char serialized[BUFFER_SIZE] = { 0 };
-    snprintf(serialized, sizeof(serialized), "%d|%s", msg.msg_id, msg.content);
+    snprintf(serialized, sizeof(serialized), "%d|%s", localMsg.msg_id, localMsg.content);
 
-    addMessageToWorker(worker, &msg);
+    // kopiraj poruku u workera (napravi kopiju)
+    addMessageToWorker(worker, &localMsg);
 
+  
     int bytesSent = send(worker->socketFd, serialized, static_cast<int>(strlen(serialized)), 0);
     if (bytesSent == SOCKET_ERROR) {
         printf("Greska pri slanju poruke workeru.\n");

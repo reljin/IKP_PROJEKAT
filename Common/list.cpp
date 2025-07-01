@@ -43,32 +43,27 @@ void insertAtBeginning(Node** head, void* value, size_t dataSize) {
 }
 
 
-void deleteNode(Node** head, void* value, size_t dataSize, int (*cmp)(void*, void*)) {
-    if (*head == NULL) {
-        printf("Lista je prazna!\n");
-        return;
-    }
-
-    Node* temp = *head;
-    if (cmp(temp->data, value) == 0) {  
-        *head = temp->next;
-        free(temp);
-        return;
-    }
-
+void deleteNode(Node** head, void* data, size_t dataSize, int(*compare)(void*, void*)) {
+    Node* current = *head;
     Node* prev = NULL;
-    while (temp != NULL && cmp(temp->data, value) != 0) {
-        prev = temp;
-        temp = temp->next;
-    }
 
-    if (temp == NULL) {  
-        printf("Element nije pronadjen u listi!\n");
-        return;
-    }
+    while (current != NULL) {
+        if (compare(current->data, data) == 0) {
+            if (prev == NULL) {
+                *head = current->next;
+            }
+            else {
+                prev->next = current->next;
+            }
 
-    prev->next = temp->next;
-    free(temp);
+            free(current->data); // bitno da oslobodiš Message
+            free(current);       // oslobodiš čvor
+            return;
+        }
+
+        prev = current;
+        current = current->next;
+    }
 }
 
 

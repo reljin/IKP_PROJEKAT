@@ -57,5 +57,9 @@ Makefile
 *~
 *.orig
 
-# VSCode (ako koristiš i njega)
+# VSCode 
 .vscode/
+
+#save fajlovi
+workerOutput.txt
+replicatorOutput.txt
