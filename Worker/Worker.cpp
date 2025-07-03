@@ -23,16 +23,19 @@ std::condition_variable receivedMessagesQueueCV;
 Queue* receivedMessagesQueue = nullptr;
 std::atomic<bool> stopWorker(false);
 SOCKET replicatorSocket;
+std::mutex fileMutex;
 
 
 void saveData(const char* buffer) {
-    std::ofstream file("workerOutput.txt", std::ios::app); 
+    std::lock_guard<std::mutex> lock(fileMutex);
+
+    std::ofstream file("workerOutput.txt", std::ios::app);
     if (!file) {
         std::cerr << "Greška pri otvaranju fajla." << std::endl;
         return;
     }
-    file << buffer << std::endl; 
-    file.close(); 
+    file << buffer << std::endl;
+    file.close();
 }
 
 void processMessages(SOCKET workerSocket) {
@@ -58,6 +61,7 @@ void processMessages(SOCKET workerSocket) {
         printf("Worker primio poruku: %s\n", queueStoredBuffer);
 
         lock.unlock(); 
+
 
         saveData(queueStoredBuffer);
 
@@ -92,6 +96,7 @@ void receiveData(SOCKET workerSocket) {
 
             {
                 std::lock_guard<std::mutex> lock(receivedMessagesQueueMutex);
+
 
                 if (oneMessage == "FREE_QUEUE") {
                     printf("FREE_QUEUE\n");

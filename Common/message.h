@@ -18,13 +18,8 @@ typedef int socket_t;
 #define closesocket(s)  close(s)
 #endif
 
-#define BUFFER_SIZE 256  // We keep 256 here to match your originals
+#define BUFFER_SIZE 256  
 
-/// Each Message carries:
-///   - a unique msg_id (assigned by LB if client sends 0),
-///   - a `type` (text vs file vs control),
-///   - the `clientSocket` (so LB knows where to bounce the ACK),
-///   - plus up to 256 bytes of `content`.
 enum MessageType {
     TEXT_MESSAGE = 1,
     FILE_MESSAGE = 2,
@@ -33,9 +28,9 @@ enum MessageType {
 };
 
 typedef struct Message {
-    int        msg_id;        // Unique ID (0 if client leaves it to LB)
-    int        type;          // TEXT_MESSAGE, etc.
-    socket_t   clientSocket;  // The socket of the original client
+    int        msg_id;        
+    int        type;          
+    socket_t   clientSocket;  
     char       content[BUFFER_SIZE];
 } Message;
 

@@ -49,8 +49,11 @@ int compareWorkersByPointer(void* a, void* b) {
     return (a == b) ? 0 : 1;
 }
 
+
+
 void handleClient(SOCKET clientSocket) {
     char buffer[BUFFER_SIZE];
+    std::string leftover;
 
     while (true) {
         int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
@@ -59,57 +62,70 @@ void handleClient(SOCKET clientSocket) {
                 printf("LB: Klijent se diskonektovao (socket=%d)\n", (int)clientSocket);
             }
             else {
-                printf("LB: Greska pri primanju od klijenta %d, code=%d\n",
+                printf("LB: Greška pri primanju od klijenta %d, code=%d\n",
                     (int)clientSocket, WSAGetLastError());
             }
             break;
         }
 
         buffer[bytesReceived] = '\0';
-        printf("LB: Primljena poruka od klijenta (socket=%d) => content=\"%s\"\n\n",
-        (int)clientSocket, buffer);
+        leftover += buffer;
 
-        Message msg;      
+        size_t pos;
+        while ((pos = leftover.find('\n')) != std::string::npos) {
+            std::string oneMessage = leftover.substr(0, pos);
+            leftover.erase(0, pos + 1);  // ukloni poruku i delimiter
 
-        msg.content[BUFFER_SIZE - 1] = '\0'; 
-        strncpy_s(msg.content, buffer, sizeof(msg.content) - 1);
+            // ukloni trailing \r ako postoji (Windows stil)
+            if (!oneMessage.empty() && oneMessage.back() == '\r') {
+                oneMessage.pop_back();
+            }
 
+            printf("LB: Primljena poruka od klijenta (socket=%d) => content=\"%s\"\n\n",
+                (int)clientSocket, oneMessage.c_str());
 
-        {
-            std::lock_guard<std::mutex> lock(idMutex);
-            msg.msg_id = global_msg_id++;
+            Message msg;
 
-        }
-        msg.clientSocket = clientSocket;
-        msg.type = TEXT_MESSAGE;
+            // Kopiraj poruku u msg.content, pazi na veličinu
+            strncpy_s(msg.content, oneMessage.c_str(), sizeof(msg.content) - 1);
+            msg.content[sizeof(msg.content) - 1] = '\0';
 
-        {
-            std::lock_guard<std::mutex> lock(clientMessageQueueMutex);
-            enqueue(clientMessages, &msg);
-        }
-        
-
-        Worker* mostFreeWorker = nullptr;
-
-        
-
-        if (workers != NULL) {
             {
-                
-                std::lock_guard<std::mutex> lock(workersMutex);
-                mostFreeWorker = findMostFreeWorker(workers); 
+                std::lock_guard<std::mutex> lock(idMutex);
+                msg.msg_id = global_msg_id++;
+            }
+            msg.clientSocket = clientSocket;
+            msg.type = TEXT_MESSAGE;
+
+            // Formiraj framed poruku sa delimiterima | i završnim \n
+            char framed[BUFFER_SIZE] = { 0 };
+            snprintf(framed, sizeof(framed), "|%d|%s|\n", msg.msg_id, msg.content);
+            strncpy_s(msg.content, framed, sizeof(msg.content) - 1);
+            msg.content[sizeof(msg.content) - 1] = '\0';
+
+            {
+                std::lock_guard<std::mutex> lock(clientMessageQueueMutex);
+                enqueue(clientMessages, &msg);
             }
 
-            if (mostFreeWorker != nullptr) {
-                sendDataToWorker(mostFreeWorker, clientMessages);
+            Worker* mostFreeWorker = nullptr;
 
+            if (workers != nullptr) {
+                {
+                    std::lock_guard<std::mutex> lock(workersMutex);
+                    mostFreeWorker = findMostFreeWorker(workers);
+                }
+
+                if (mostFreeWorker != nullptr) {
+                    sendDataToWorker(mostFreeWorker, clientMessages);
+                }
             }
+
+            // Pošalji kratak ack klijentu
+            char shortAck[BUFFER_SIZE];
+            snprintf(shortAck, sizeof(shortAck), "LB primio msg_id=%d", msg.msg_id);
+            send(clientSocket, shortAck, (int)strlen(shortAck), 0);
         }
-     
-        char shortAck[BUFFER_SIZE];
-        snprintf(shortAck, sizeof(shortAck),
-            "LB primio msg_id=%d", msg.msg_id);
-        send(clientSocket, shortAck, (int)strlen(shortAck), 0);
     }
 
     closesocket(clientSocket);
@@ -201,7 +217,7 @@ void handleWorkerResponse(Worker* worker) {
             {
                 std::lock_guard<std::mutex> lock(obradjeneLockMutex);
                 broj_obradjenih_poruka++;
-                printf("LB: Ukupno obradjeno poruka = %d\n", broj_obradjenih_poruka);
+                //printf("LB: Ukupno obradjeno poruka = %d\n", broj_obradjenih_poruka);
             }
 
             free(finished);
@@ -217,7 +233,7 @@ void handleWorkerResponse(Worker* worker) {
         while (true) {
             Message* msg = removeMessageFromWorker(worker);
             if (msg == NULL) break;
-            printf("Poruka vracena u queue: %s\n", msg->content);
+            printf("Poruka vracena u queue: %s\n", msg->content);          
             enqueue(clientMessages, msg);
             free(msg);
         }
@@ -233,7 +249,7 @@ void handleWorkerResponse(Worker* worker) {
 
     {
         std::lock_guard<std::mutex> lock(workersMutex);
-        redistributeMessages(clientMessages, workers);
+        redistributeMessagesDead(clientMessages, workers);
     }
 
     printf("LB: handleWorkerResponse thread for Worker ID=%d ended.\n", worker->id);

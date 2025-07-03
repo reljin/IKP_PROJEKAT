@@ -10,7 +10,8 @@
 
 Worker* findMostFreeWorker(Node* workers);
 void sendDataToWorker(Worker* worker, Queue* clientMessages);
-void redistributeMessages(Queue* clientMessages, Node* workers);
+void redistributeMessages(Queue* clientMessages, Node* workers);void redistributeMessages(Queue* clientMessages, Node* workers);
+void redistributeMessagesDead(Queue* clientMessages, Node* workers);
 
 	
 #endif

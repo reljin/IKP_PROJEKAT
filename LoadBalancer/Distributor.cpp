@@ -38,19 +38,20 @@ void sendDataToWorker(Worker* worker, Queue* clientMessages) {
         dequeue(clientMessages, &localMsg);
     }
 
-    char serialized[BUFFER_SIZE] = { 0 };
-    snprintf(serialized, sizeof(serialized), "%d|%s", localMsg.msg_id, localMsg.content);
-
-    // kopiraj poruku u workera (napravi kopiju)
     addMessageToWorker(worker, &localMsg);
 
-  
-    int bytesSent = send(worker->socketFd, serialized, static_cast<int>(strlen(serialized)), 0);
-    if (bytesSent == SOCKET_ERROR) {
-        printf("Greska pri slanju poruke workeru.\n");
+    int len = static_cast<int>(strlen(localMsg.content));
+    int sent = send(worker->socketFd,
+        localMsg.content,
+        len,
+        0);
+
+    if (sent == SOCKET_ERROR) {
+        printf("Greska pri slanju workeru (ID=%d).\n", worker->id);
     }
     else {
-        printf("Poruka poslata workeru sa ID: %d\n", worker->id);
+        printf("Poslato %d bajta workeru (ID=%d): %s\n",
+            sent, worker->id, localMsg.content);
     }
 }
 
@@ -62,7 +63,50 @@ void sendFreeQueueCommandToWorker(Worker* worker) {
     
 }
 
+#include <atomic>
+std::atomic<bool> isRedistributeActive(false);
+
+//ako worker opadne a svi workeri su vec primili poruke i samo obradjuju
+
+void redistributeMessagesDead(Queue* clientMessages, Node* workers) {
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    if (isRedistributeActive.load()) {
+        printf("Glavna redistribucija je aktivna. Dead redistribucija se prekida.\n");
+        return;
+    }
+
+    while (true) {
+        {
+
+            std::lock_guard<std::mutex> queueLock(clientMessageQueueMutex);
+            if (isEmpty(clientMessages)) {
+                break;
+            }
+        }
+
+        Worker* bestWorker = nullptr;
+        {
+
+            bestWorker = findMostFreeWorker(workers);
+        }
+
+        if (bestWorker == nullptr) {
+            std::cerr << "Nema dostupnih workera za redistribuciju.\n";
+            break;
+        }
+
+        sendDataToWorker(bestWorker, clientMessages);
+    }
+
+
+
+}
+
 void redistributeMessages(Queue* clientMessages, Node* workers) {
+
+    isRedistributeActive.store(true);
 
     //Slanje FREE_QUEUE komande svim workerima
     {
@@ -124,5 +168,6 @@ void redistributeMessages(Queue* clientMessages, Node* workers) {
 
         sendDataToWorker(bestWorker, clientMessages);
     }
+    isRedistributeActive.store(false);
 
 }

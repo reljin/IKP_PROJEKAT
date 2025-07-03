@@ -6,6 +6,7 @@
 #include <ws2tcpip.h>
 #include <mutex>
 #include <condition_variable>
+#include <random>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -19,7 +20,14 @@ std::mutex ackMutex;
 std::condition_variable ackCV;
 
 std::string generateRandomMessage(int messageNum) {
-    return "Poruka broj " + std::to_string(messageNum);
+    size_t len = 20;
+    const char* chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    std::string s;
+    static std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<> dist(0, 51);
+    while (len--) s += chars[dist(rng)];
+    return s;
+    //return "Poruka broj " + std::to_string(messageNum);
 }
 
 void sendMessages(SOCKET clientSocket) {
