@@ -63,3 +63,6 @@ Makefile
 #save fajlovi
 workerOutput.txt
 replicatorOutput.txt
+workerResponses.txt
+clientOutput.txt
+log.txt

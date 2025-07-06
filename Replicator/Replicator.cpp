@@ -2,38 +2,27 @@
 #include <stdlib.h>
 #include <string.h>
 #include <winsock2.h>
-#include <ws2tcpip.h>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
 #include <fstream>
 #include <iostream>
-#include "../Common/queue.h"
+#include <thread>
+#include <mutex>
 
 #pragma comment(lib, "ws2_32.lib")
 
 #define REPLICATOR_PORT 6061
 #define BUFFER_SIZE 256
 
-Queue* replicationQueue = nullptr;
-std::mutex queueMutex;
-std::condition_variable queueCV;
-std::atomic<bool> stopReplikator(false);
-
-void printMessageData(void* data) {
-    printf("%s ", (char*)data);
-    printf("\n");
-}
+std::mutex fileMutex;
 
 void saveData(const char* buffer) {
+    std::lock_guard<std::mutex> lock(fileMutex); 
+
     std::ofstream file("replicatorOutput.txt", std::ios::app);
     if (!file) {
-        std::cerr << "Greška pri otvaranju fajla." << std::endl;
+        std::cerr << "Greska pri otvaranju fajla." << std::endl;
         return;
     }
     file << buffer << std::endl;
-    file.close();
 }
 
 void receiveAndStoreFromWorker(SOCKET workerSocket) {
@@ -44,34 +33,9 @@ void receiveAndStoreFromWorker(SOCKET workerSocket) {
         if (bytesReceived <= 0) break;
 
         buffer[bytesReceived] = '\0';
-
-      
         std::string prefixed = "Replikator primio poruku: " + std::string(buffer);
 
-        {
-            std::lock_guard<std::mutex> lock(queueMutex);
-
-            char* prefixedCopy = (char*)malloc(BUFFER_SIZE);
-            if (!prefixedCopy) {
-                printf("Greska pri alokaciji memorije za prefiks poruke.\n");
-                continue;
-            }
-
-            strncpy_s(prefixedCopy, BUFFER_SIZE, prefixed.c_str(), _TRUNCATE);
-            prefixedCopy[BUFFER_SIZE - 1] = '\0';
-
-            enqueue(replicationQueue, prefixedCopy);
-            free(prefixedCopy);
-        }
-
-        queueCV.notify_one();
-
         printf("[Replikator] Poruka uspesno replikovana: %s\n", prefixed.c_str());
-        //printf("[Replikator] Trenutni sadrzaj replicationQueue: ");
-        //displayList(replicationQueue->front, printMessageData);
-        //printf("\n");
-        std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Simulacija obrade ne radi iznad 30???
-
         saveData(buffer);
     }
 
@@ -79,16 +43,10 @@ void receiveAndStoreFromWorker(SOCKET workerSocket) {
 }
 
 int main() {
+    std::ofstream("replicatorOutput.txt", std::ios::trunc).close();
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         printf("Greska pri inicijalizaciji Winsock-a.\n");
-        return 1;
-    }
-
-    replicationQueue = createQueue(BUFFER_SIZE);
-    if (!replicationQueue) {
-        printf("Greska pri kreiranju replication queue.\n");
-        WSACleanup();
         return 1;
     }
 
@@ -126,15 +84,10 @@ int main() {
         SOCKET workerSocket = accept(serverSocket, (sockaddr*)&clientAddr, &clientSize);
         if (workerSocket == INVALID_SOCKET) break;
 
-        std::thread t(receiveAndStoreFromWorker, workerSocket);
-        t.detach();
+        std::thread(receiveAndStoreFromWorker, workerSocket).detach();
     }
 
-    stopReplikator.store(true);
-    queueCV.notify_all();
-
     closesocket(serverSocket);
-    freeQueue(replicationQueue);
     WSACleanup();
     return 0;
 }

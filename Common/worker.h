@@ -3,6 +3,7 @@
 #ifndef WORKER_H
 #define WORKER_H
 
+#include "list.h"
 #include <winsock2.h> 
 #include <mutex>      
 #include <iostream>    
@@ -17,6 +18,8 @@ typedef struct Worker {
     int socketFd;           
     struct sockaddr_in addr;
     std::mutex mtx;         
+    int targetMsgCount;
+    bool isNew;
 } Worker;
 
 Worker* createWorker(int id);
@@ -24,6 +27,7 @@ bool addMessageToWorker(Worker* worker, const Message* newMessage);
 Message* removeMessageFromWorker(Worker* worker);
 void destroyWorker(Worker* worker);
 void printWorkerInfo(const Worker* worker);
+Worker* selectWorker(Node* workers);
 
 #endif // WORKER_H
 

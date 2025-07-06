@@ -9,7 +9,11 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
-#include "queue.h"     
+#include "queue.h"   
+
+#include <windows.h>
+
+HANDLE g_fileMutexHandle = NULL;
 
 #pragma comment(lib, "ws2_32.lib")  
 
@@ -27,22 +31,42 @@ std::mutex fileMutex;
 
 
 void saveData(const char* buffer) {
-    std::lock_guard<std::mutex> lock(fileMutex);
-
-    std::ofstream file("workerOutput.txt", std::ios::app);
-    if (!file) {
-        std::cerr << "Greška pri otvaranju fajla." << std::endl;
-        return;
+    if (g_fileMutexHandle) {
+        DWORD waitResult = WaitForSingleObject(g_fileMutexHandle, INFINITE);
+        if (waitResult == WAIT_OBJECT_0) {
+            std::ofstream file("workerOutput.txt", std::ios::app);
+            if (!file) {
+                printf("Greska pri otvaranju fajla.\n");
+            }
+            else {
+                file << buffer << std::endl;
+                file.close();
+            }
+            ReleaseMutex(g_fileMutexHandle);
+        }
+        else {
+            printf("Nije uspeo WaitForSingleObject za mutex. Kod greske: %lu\n", GetLastError());
+        }
     }
-    file << buffer << std::endl;
-    file.close();
+    else {
+        // Fallback: ako nema mutex, samo piši bez sinhronizacije
+        std::ofstream file("workerOutput.txt", std::ios::app);
+        if (!file) {
+            printf("Greska pri otvaranju fajla.\n");
+            return;
+        }
+        file << buffer << std::endl;
+        file.close();
+    }
 }
+
+
 
 void processMessages(SOCKET workerSocket) {
     char* queueStoredBuffer = (char*)malloc(receivedMessagesQueue->dataSize);
 
     if (!queueStoredBuffer) {
-        perror("Greška pri alokaciji memorije za queueStoredBuffer");
+        perror("Greska pri alokaciji memorije za queueStoredBuffer");
         return;
     }
 
@@ -55,19 +79,22 @@ void processMessages(SOCKET workerSocket) {
             break;
         }
 
+        memset(queueStoredBuffer, 0, receivedMessagesQueue->dataSize);
+
+        // Dequeue raw data into our buffer
         dequeue(receivedMessagesQueue, queueStoredBuffer);
-        queueStoredBuffer[receivedMessagesQueue->dataSize - 1] = '\0';
 
-        printf("Worker primio poruku: %s\n", queueStoredBuffer);
+        // Properly null-terminate at actual end of string
+        size_t msgLen = strnlen(queueStoredBuffer, receivedMessagesQueue->dataSize);
+        queueStoredBuffer[msgLen] = '\0';     
 
-        lock.unlock(); 
-
+        lock.unlock();         
 
         saveData(queueStoredBuffer);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Simulacija obrade ne radi iznad 30???
-
-        std::string response = std::string(queueStoredBuffer);
+        //std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Simulacija obrade ne radi iznad 30???
+      
+        std::string response = std::string(queueStoredBuffer) + "\n";
         send(workerSocket, response.c_str(), response.size(), 0);
 
         
@@ -87,12 +114,21 @@ void receiveData(SOCKET workerSocket) {
             break;
 
         buffer[bytesReceived] = '\0';
+
+        if (bytesReceived > 0 && std::string(buffer, bytesReceived).find('\n') == std::string::npos) {
+            printf("\nRAW (bez \\n) (%d bajtova): ", bytesReceived);
+            for (int i = 0; i < bytesReceived; ++i)
+                printf("%02X ", (unsigned char)buffer[i]);
+            printf("\n");
+        }
+
         leftover += buffer;
 
         size_t pos;
         while ((pos = leftover.find('\n')) != std::string::npos) {
             std::string oneMessage = leftover.substr(0, pos);
             leftover.erase(0, pos + 1);
+            printf("Poruka: %s\n", oneMessage.c_str());
 
             {
                 std::lock_guard<std::mutex> lock(receivedMessagesQueueMutex);
@@ -105,14 +141,17 @@ void receiveData(SOCKET workerSocket) {
                 }
 
                 // Alociraj mutable bafer i kopiraj poruku
-                char* msgBuf = (char*)malloc(oneMessage.size() + 1);
+                char* msgBuf = (char*)malloc(BUFFER_SIZE);
+
                 if (!msgBuf) {
                     fprintf(stderr, "Greška pri alokaciji memorije za poruku\n");
                     continue;
                 }
-                memcpy(msgBuf, oneMessage.c_str(), oneMessage.size() + 1);
+                memset(msgBuf, 0, BUFFER_SIZE);
+                strncpy_s(msgBuf, BUFFER_SIZE, oneMessage.c_str(), _TRUNCATE);
 
                 enqueue(receivedMessagesQueue, msgBuf);
+                free(msgBuf);
             }
 
             receivedMessagesQueueCV.notify_one();
@@ -136,18 +175,26 @@ void handleWorker(SOCKET workerSocket) {
         freeQueue(receivedMessagesQueue);
     }
 }
+#include "message.h"
 
 int main() {
-   
+    //std::ofstream("workerOutput.txt", std::ios::trunc).close();
+
+    g_fileMutexHandle = CreateMutex(NULL, FALSE, L"Global\\WorkerFileMutex");
+    if (g_fileMutexHandle == NULL) {
+        printf("Ne mogu da kreiram named mutex. Greska: %lu\n", GetLastError());
+        // Možeš odlučiti da li prekidaš ili nastavljaš
+    }
+
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        printf("Greška pri inicijalizaciji Winsock-a.\n");
+        printf("Greska pri inicijalizaciji Winsock-a.\n");
         return 1;
     }
 
     receivedMessagesQueue = createQueue(BUFFER_SIZE);
     if (!receivedMessagesQueue) {
-        printf("Greška pri kreiranju reda klijenata.\n");
+        printf("Greska pri kreiranju reda klijenata.\n");
         WSACleanup();
         return 1;
     }
@@ -166,7 +213,7 @@ int main() {
     serverAddress.sin_port = htons(SERVER_PORT_WORKER);
 
     if (inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr) <= 0) {
-        printf("Greška pri konverziji IP adrese.\n");
+        printf("Greska pri konverziji IP adrese.\n");
         closesocket(workerSocket);
         WSACleanup();
         return 1;
@@ -174,7 +221,7 @@ int main() {
 
     
     if (connect(workerSocket, (sockaddr*)&serverAddress, sizeof(serverAddress)) == SOCKET_ERROR) {
-        printf("Greška pri povezivanju sa Load Balancerom.\n");
+        printf("Greska pri povezivanju sa Load Balancerom.\n");
         closesocket(workerSocket);
         WSACleanup();
         return 1;
@@ -183,7 +230,7 @@ int main() {
   
     replicatorSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (replicatorSocket == INVALID_SOCKET) {
-        printf("Greška pri kreiranju socket-a za replikator.\n");
+        printf("Greka pri kreiranju socket-a za replikator.\n");
     } else {
         sockaddr_in replAddr;
         replAddr.sin_family = AF_INET;
@@ -216,5 +263,11 @@ int main() {
  
     closesocket(workerSocket);
     WSACleanup();
+
+    if (g_fileMutexHandle) {
+        CloseHandle(g_fileMutexHandle);
+        g_fileMutexHandle = NULL;
+    }
+
     return 0;
 }

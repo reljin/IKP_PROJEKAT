@@ -13,6 +13,8 @@ Worker* createWorker(int id) {
     newWorker->id = id;
     newWorker->dataCount = 0;
     newWorker->socketFd = -1;
+    newWorker->isNew = false;
+    newWorker->targetMsgCount = 0;
 
     newWorker->data = (Message**)malloc(sizeof(Message*) * MAX_DATA_SIZE);
     if (newWorker->data == nullptr) {
