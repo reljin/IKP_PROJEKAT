@@ -59,5 +59,11 @@
     <ClCompile Include="message_map.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="queue_utils.cpp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="worker_utils.cpp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

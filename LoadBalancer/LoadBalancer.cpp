@@ -74,6 +74,32 @@ void printQueue(Queue* q) {
     }
 }
 
+void disconnectClient(SOCKET clientSocket) {
+    printf("Prekidam vezu sa klijentom (socket=%d)...\n", (int)clientSocket);
+
+    closesocket(clientSocket);
+
+    {
+        std::lock_guard<std::mutex> lock(clientSocketsMutex);
+        auto it = std::find(clientSockets.begin(), clientSockets.end(), clientSocket);
+        if (it != clientSockets.end()) {
+            clientSockets.erase(it);
+        }
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(clientMessageQueueMutex);
+        removeMessagesFromQueueBySocket(clientMessages, clientSocket);
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(workersMutex);
+        removeMessagesFromAllWorkersBySocket(workers, clientSocket);
+    }
+
+    printf("Klijent (socket=%d) je uklonjen iz svih struktura.\n", (int)clientSocket);
+}
+
 #include <random>
 std::random_device rd;
 std::mt19937 gen(rd());
@@ -94,6 +120,7 @@ void handleClient(SOCKET clientSocket) {
                 printf("LB: Greška pri primanju od klijenta %d, code=%d\n",
                     (int)clientSocket, WSAGetLastError());
             }
+            disconnectClient(clientSocket);  
             break;
         }
         buffer[bytesReceived] = '\0';
@@ -136,11 +163,11 @@ void handleClient(SOCKET clientSocket) {
 
             Worker* mostFreeWorker = nullptr;
             int retryCount = 0;
-            const int MAX_RETRIES = 15;
+            const int MAX_RETRIES = 5;
 
             bool success = false;
 
-            while (!success && retryCount < MAX_RETRIES) {
+            while (!success) {
                 {
                     std::lock_guard<std::mutex> lock(workersMutex);
                     mostFreeWorker = selectWorker(workers);
@@ -160,9 +187,17 @@ void handleClient(SOCKET clientSocket) {
                             waitTimeProgress = 5000;
 
                         retryCount++;
+
+                        if (retryCount == MAX_RETRIES) {
+                            printf("Workeri su pretrpani");
+                            disconnectClient(clientSocket);
+
+                            break;
+                        }
+
                     }
                     else {
-                        waitTimeProgress -= 100;
+                        waitTimeProgress -= 200;
                         if (waitTimeProgress < 0)
                             waitTimeProgress = 0;
                     }
@@ -186,23 +221,10 @@ void handleClient(SOCKET clientSocket) {
         printQueue(clientMessages);
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-
     if (!leftover.empty()) {
         printf("Preostali nepotpuni podaci od klijenta (socket=%d): \"%s\"\n", (int)clientSocket, leftover.c_str());
         leftover.clear(); // ili std::string().swap(leftover);
     }
-
-    closesocket(clientSocket);
-
-    {
-        std::lock_guard<std::mutex> lock(clientSocketsMutex);
-        auto it = std::find(clientSockets.begin(), clientSockets.end(), clientSocket);
-        if (it != clientSockets.end()) {
-            clientSockets.erase(it);
-        }
-    }
-
     printf("Zavrsena nit za klijenta.\n");
 }
 

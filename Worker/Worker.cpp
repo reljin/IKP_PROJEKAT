@@ -81,10 +81,8 @@ void processMessages(SOCKET workerSocket) {
 
         memset(queueStoredBuffer, 0, receivedMessagesQueue->dataSize);
 
-        // Dequeue raw data into our buffer
         dequeue(receivedMessagesQueue, queueStoredBuffer);
 
-        // Properly null-terminate at actual end of string
         size_t msgLen = strnlen(queueStoredBuffer, receivedMessagesQueue->dataSize);
         queueStoredBuffer[msgLen] = '\0';     
 
@@ -92,7 +90,7 @@ void processMessages(SOCKET workerSocket) {
 
         saveData(queueStoredBuffer);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Simulacija obrade 
+        //std::this_thread::sleep_for(std::chrono::milliseconds(100)); 
       
         std::string response = std::string(queueStoredBuffer) + "\n";
         send(workerSocket, response.c_str(), response.size(), 0);

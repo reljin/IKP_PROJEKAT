@@ -31,6 +31,7 @@ Message* removeMessageFromWorkerByMessageId(Worker* worker, int msg_id);
 void destroyWorker(Worker* worker);
 void printWorkerInfo(const Worker* worker);
 Worker* selectWorker(Node* workers);
+void removeMessagesFromAllWorkersBySocket(Node* workers, SOCKET sock);
 
 #endif // WORKER_H
 

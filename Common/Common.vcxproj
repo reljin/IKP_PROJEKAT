@@ -159,7 +159,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="queue.cpp" />
+    <ClCompile Include="queue_utils.cpp.cpp" />
     <ClCompile Include="worker.cpp" />
+    <ClCompile Include="worker_utils.cpp.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
