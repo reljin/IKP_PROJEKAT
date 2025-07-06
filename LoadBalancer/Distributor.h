@@ -6,7 +6,7 @@
 #include "list.h"
 #include <vector>
 #include "queue.h"
-#include "worker.h"
+
 
 Worker* findMostFreeWorker(Node* workers);
 bool sendDataToWorker(Worker* worker, Queue* clientMessages);

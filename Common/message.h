@@ -4,6 +4,7 @@
 
 #ifdef _WIN32
 #include <winsock2.h>
+#include <string>
 #pragma comment(lib, "ws2_32.lib")
 typedef SOCKET socket_t;
 #else
@@ -35,5 +36,6 @@ typedef struct Message {
 } Message;
 
 int compareMessagesById(void* a, void* b);
+int extractMsgIdFromWorkerResponse(const std::string& message);
 
 #endif // MESSAGE_H

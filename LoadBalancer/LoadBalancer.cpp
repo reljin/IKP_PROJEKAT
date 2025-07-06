@@ -77,11 +77,12 @@ void printQueue(Queue* q) {
 #include <random>
 std::random_device rd;
 std::mt19937 gen(rd());
-std::uniform_int_distribution<> dis(1000, 1200);
+std::uniform_int_distribution<> dis(200, 1000);
 
 void handleClient(SOCKET clientSocket) {
     char buffer[BUFFER_SIZE];
     std::string leftover;
+    int waitTimeProgress = 0;
 
     while (true) {
         int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
@@ -95,21 +96,16 @@ void handleClient(SOCKET clientSocket) {
             }
             break;
         }
-
-
         buffer[bytesReceived] = '\0';
         std::this_thread::sleep_for(std::chrono::microseconds(1));
-        //printf("[LB DEBUG] Primljeno %d bajtova od socket=%d: \"%.*s\"\n",bytesReceived, (int)clientSocket, bytesReceived, buffer);
-
-        
+        //printf("[LB DEBUG] Primljeno %d bajtova od socket=%d: \"%.*s\"\n",bytesReceived, (int)clientSocket, bytesReceived, buffer);       
         leftover += buffer;
 
         size_t pos;
         while ((pos = leftover.find('\n')) != std::string::npos) {
             std::string oneMessage = leftover.substr(0, pos);
             leftover.erase(0, pos + 1);  
-
-          
+         
             if (!oneMessage.empty() && oneMessage.back() == '\r') {
                 oneMessage.pop_back();
             }
@@ -117,12 +113,9 @@ void handleClient(SOCKET clientSocket) {
             printf("LB: Primljena poruka od klijenta (socket=%d) => content=\"%s\"\n\n",
                 (int)clientSocket, oneMessage.c_str());
 
-            Message msg;
-
-            
+            Message msg;           
             strncpy_s(msg.content, oneMessage.c_str(), sizeof(msg.content) - 1);
             msg.content[sizeof(msg.content) - 1] = '\0';
-
             {
                 std::lock_guard<std::mutex> lock(idMutex);
                 msg.msg_id = global_msg_id++;
@@ -142,26 +135,44 @@ void handleClient(SOCKET clientSocket) {
             }
 
             Worker* mostFreeWorker = nullptr;
+            int retryCount = 0;
+            const int MAX_RETRIES = 15;
 
-            if (workers != nullptr) {
+            bool success = false;
+
+            while (!success && retryCount < MAX_RETRIES) {
                 {
                     std::lock_guard<std::mutex> lock(workersMutex);
                     mostFreeWorker = selectWorker(workers);
                 }
 
                 if (mostFreeWorker != nullptr) {
-                    if (isFREE_QUEUE_ACTIVE.load()) {
-                        std::this_thread::sleep_for(std::chrono::microseconds(10));
-                    }
-                    bool success = sendDataToWorker(mostFreeWorker, clientMessages);
+
+                    success = sendDataToWorker(mostFreeWorker, clientMessages);
                     if (!success) {
-                        printf("Slanje poruke nije uspelo, pravim pauzu...\n");
+                        printf("Slanje poruke NIJE uspelo (pokusaj %d). Pauza...\n", retryCount + 1);
+
                         int sleep_ms = dis(gen);
-                        std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
+                        std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms + waitTimeProgress));
+                        waitTimeProgress += 1000;
+
+                        if (waitTimeProgress > 5000)
+                            waitTimeProgress = 5000;
+
+                        retryCount++;
+                    }
+                    else {
+                        waitTimeProgress -= 100;
+                        if (waitTimeProgress < 0)
+                            waitTimeProgress = 0;
                     }
                 }
+                else {
+                    printf("Nema dostupnih Workera! Cekam...\n");
+                    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                    retryCount++;
+                }
             }
-            
             // Pošalji kratak ack klijentu
             //char shortAck[BUFFER_SIZE];
             //snprintf(shortAck, sizeof(shortAck), "LB primio msg_id=%d", msg.msg_id);
@@ -278,21 +289,23 @@ void handleWorkerResponse(Worker* worker) {
         while ((pos = leftover.find('\n')) != std::string::npos) {
             std::string oneMessage = leftover.substr(0, pos);
             leftover.erase(0, pos + 1);
-
             printf("Worker ID%d response: %s\n", worker->id, oneMessage.c_str());
             logWorkerResponse(worker->id, oneMessage.c_str(), (int)oneMessage.size());
 
-            Message* finished = removeMessageFromWorker(worker);
+
+            int msg_id = -1;
+            msg_id = extractMsgIdFromWorkerResponse(oneMessage);
+            if (msg_id == -1) {
+                printf("LB: [GRESKA] Nevalidna poruka od Workera %d: %s\n", worker->id, oneMessage.c_str());
+                continue;
+            }
+            Message* finished = removeMessageFromWorkerByMessageId(worker, msg_id);
             if (finished) {
                 char ackBuffer[BUFFER_SIZE];
-                snprintf(ackBuffer, sizeof(ackBuffer),
-                    "msg_id=%d obradjeno: %s",
-                    finished->msg_id, finished->content);
 
-                 
+                snprintf(ackBuffer, sizeof(ackBuffer),"msg_id=%d obradjeno: %s",finished->msg_id, finished->content);
                 send(finished->clientSocket, ackBuffer, (int)strlen(ackBuffer), 0);
                 
-
                 {
                     std::lock_guard<std::mutex> lock(obradjeneLockMutex);
                     broj_obradjenih_poruka++;
@@ -303,6 +316,8 @@ void handleWorkerResponse(Worker* worker) {
             }
             else {
                 printf("LB: (warning) no in flight message to pop for Worker ID=%d\n", worker->id);
+                printf("LB: [WARNING] Nema poruke za msg_id=%d kod Workera ID=%d\n", msg_id, worker->id);
+                //proveri dal je dobar removeMessageFromWorker(worker);
             }
         }
     }
@@ -380,8 +395,7 @@ void workerListener(SOCKET workerListenSocket) {
             newWorker->targetMsgCount = (int)(prosek * faktor);
             newWorker->isNew = true;
 
-            printf("[BALANCE] Novi Worker ID=%d dobija %d poruka pre nego što uđe u ravnotežu.\n",
-                newWorker->id, newWorker->targetMsgCount);
+            printf("[BALANCE] Novi Worker ID=%d dobija %d poruka pre nego što uđe u ravnotežu.\n",newWorker->id, newWorker->targetMsgCount);
         }
         displayList(workers, printWorker);
 

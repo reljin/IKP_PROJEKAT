@@ -92,7 +92,7 @@ void processMessages(SOCKET workerSocket) {
 
         saveData(queueStoredBuffer);
 
-        //std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Simulacija obrade ne radi iznad 30???
+        std::this_thread::sleep_for(std::chrono::milliseconds(1)); // Simulacija obrade 
       
         std::string response = std::string(queueStoredBuffer) + "\n";
         send(workerSocket, response.c_str(), response.size(), 0);

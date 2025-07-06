@@ -1,5 +1,4 @@
 ﻿#include "Distributor.h"
-#include "message.h"
 #include <iostream>
 #include <fstream>
 

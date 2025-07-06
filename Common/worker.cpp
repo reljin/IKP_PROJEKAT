@@ -27,6 +27,8 @@ Worker* createWorker(int id) {
         newWorker->data[i] = nullptr;
     }
 
+    newWorker->inflightMessages = createMessageMap(1024);
+
     return newWorker;
 }
 
@@ -38,16 +40,42 @@ bool addMessageToWorker(Worker* worker, const Message* newMessage) {
         return false;
     }
 
-    worker->data[worker->dataCount] = (Message*)malloc(sizeof(Message));
-    if (worker->data[worker->dataCount] == NULL) {
+    Message* msgCopy = (Message*)malloc(sizeof(Message));
+    if (!msgCopy) {
         printf("Greska pri alokaciji memorije za novu poruku.\n");
         return false;
     }
+    memcpy(msgCopy, newMessage, sizeof(Message));
 
-    memcpy(worker->data[worker->dataCount], newMessage, sizeof(Message));
-    worker->dataCount++;
+    worker->data[worker->dataCount++] = msgCopy;
+    insertMessage(worker->inflightMessages, msgCopy->msg_id, msgCopy);
 
     return true;
+}
+
+Message* removeMessageFromWorkerByMessageId(Worker* worker, int msg_id) {
+    std::lock_guard<std::mutex> lock(worker->mtx);
+
+    Message* msg = getMessage(worker->inflightMessages, msg_id);
+    if (!msg) return nullptr;
+
+    int found = -1;
+    for (int i = 0; i < worker->dataCount; ++i) {
+        if (worker->data[i]->msg_id == msg_id) {
+            found = i;
+            break;
+        }
+    }
+
+    if (found != -1) {
+        for (int j = found; j < worker->dataCount - 1; ++j) {
+            worker->data[j] = worker->data[j + 1];
+        }
+        worker->data[--worker->dataCount] = nullptr;
+    }
+
+    removeMessage(worker->inflightMessages, msg_id);
+    return msg;
 }
 
 Message* removeMessageFromWorker(Worker* worker) {
@@ -65,21 +93,21 @@ Message* removeMessageFromWorker(Worker* worker) {
 
     worker->data[worker->dataCount - 1] = NULL;
     worker->dataCount--;
+    removeMessage(worker->inflightMessages, removedMessage->msg_id);
 
     return removedMessage;
 }
 
 void destroyWorker(Worker* worker) {
-    if (worker == nullptr) return;
+    if (!worker) return;
 
-    for (int i = 0; i < worker->dataCount; i++) {
-        if (worker->data[i] != nullptr) {
-            free(worker->data[i]);
-        }
+    for (int i = 0; i < worker->dataCount; ++i) {
+        if (worker->data[i]) free(worker->data[i]);
     }
-
     free(worker->data);
-    delete worker; // koristi delete, jer si koristio new
+
+    freeMessageMap(worker->inflightMessages);
+    delete worker;
 }
 
 void printWorkerInfo(const Worker* worker) {
