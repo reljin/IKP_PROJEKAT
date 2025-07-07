@@ -8,6 +8,7 @@
 #include <random>
 #include <atomic>
 #include <fstream>
+#include <iostream>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -15,10 +16,11 @@
 #define SERVER_PORT        5059
 #define BUFFER_SIZE        256
 
-int expectedAcks = 0;
+std::atomic<int> expectedAcks(0);
 std::atomic<int> receivedAcks(0);
 int selectedOption = 0;
 std::mutex fileMutex;
+std::mutex consoleMutex;
 
 std::string generateRandomMessage(int messageNum) {
     size_t len = 20;
@@ -40,7 +42,6 @@ void saveData(const char* buffer) {
     }
 
     file << buffer << std::endl;
-    file.close();
 }
 
 void sendMessages(SOCKET clientSocket) {
@@ -48,22 +49,34 @@ void sendMessages(SOCKET clientSocket) {
 
     if (selectedOption == 1) {
         while (true) {
-            printf("Unesite poruku za server (ili 'end' za prekid): ");
-            gets_s(data, sizeof(data));
+            std::string input;
+            {
+                std::lock_guard<std::mutex> lock(consoleMutex);
+                printf("Unesite poruku za server (ili 'end' za prekid): ");
+                std::getline(std::cin, input);
+            }           
 
-            if (strcmp(data, "end") == 0) {
+            if (input.empty()) {
+                printf("Prazna poruka, preskacem slanje.\n");
+                continue;
+            }
+
+            if (input == "end") {
                 printf("Prekidanje komunikacije sa serverom.\n");
                 break;
             }
 
-            strcat_s(data, sizeof(data), "\n"); // dodaj newline
+            input += "\n";
+            strncpy_s(data, input.c_str(), sizeof(data) - 1);
+            data[sizeof(data) - 1] = '\0';
 
             int len = (int)strlen(data);
             if (send(clientSocket, data, len, 0) == SOCKET_ERROR) {
-                printf("Greska pri slanju podataka. Kod greške: %d\n", WSAGetLastError());
+                printf("Greska pri slanju podataka. Kod greske: %d\n", WSAGetLastError());
                 break;
             }
             printf("Poruka poslata serveru!\n");
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
     }
     else if (selectedOption == 2) {
@@ -76,7 +89,7 @@ void sendMessages(SOCKET clientSocket) {
 
             int sz = (int)message.size();
             if (send(clientSocket, message.c_str(), sz, 0) == SOCKET_ERROR) {
-                printf("Greška pri slanju podataka. Kod greške: %d\n", WSAGetLastError());
+                printf("Greska pri slanju podataka. Kod greske: %d\n", WSAGetLastError());
                 break;
             }
             printf("Poruka %d poslata serveru!\n", i);
@@ -89,11 +102,11 @@ void sendMessages(SOCKET clientSocket) {
 
 void receiveMessages(SOCKET clientSocket) {
     if (selectedOption == 2) {
-        DWORD timeout = 0; // 10 sekundi
+        DWORD timeout = 0; // 20 sekundi timeout
         setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
     }
     else {
-        DWORD timeout = 0; // bez timeouta
+        DWORD timeout = 0;
         setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
     }
 
@@ -102,16 +115,23 @@ void receiveMessages(SOCKET clientSocket) {
 
     while (true) {
         int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+        int err = WSAGetLastError();
+
         if (bytesReceived <= 0) {
-            int err = WSAGetLastError();
             if (bytesReceived == 0) {
                 printf("Server je zatvorio vezu.\n");
             }
             else if (selectedOption == 2 && err == WSAETIMEDOUT) {
-                printf("Nije primljena poruka u roku od 10 sekundi. Zatvaram konekciju.\n");
+                std::lock_guard<std::mutex> lock(consoleMutex);
+                printf("--------------------------------------------------\n");
+                printf("TIMEOUT: Nije primljena nijedna poruka u roku od 20 sekundi.\n");
+                printf("Zatvaram konekciju i prekidam prijem poruka.\n");
+                printf("Kod greške (WSA): %d\n", err);
+                printf("Primljeno potvrda: %d / %d\n", receivedAcks.load(), expectedAcks.load());
+                printf("--------------------------------------------------\n");
             }
             else {
-                printf("Greska pri primanju podataka. Kod greske: %d\n", err);
+                printf("Greška pri primanju podataka. Kod greske: %d\n", err);
             }
             break;
         }
@@ -128,13 +148,34 @@ void receiveMessages(SOCKET clientSocket) {
                 oneMessage.pop_back();
             }
 
-            printf("Poruka od servera: %s\n", oneMessage.c_str());
+            if (oneMessage.find("[LB] Diskonektovan") != std::string::npos) {
+                std::lock_guard<std::mutex> lock(consoleMutex);
+                printf("SERVER: %s\n", oneMessage.c_str());
+                printf("Prekidam klijenta jer je LB zatvorio vezu zbog preopterećenosti.\n");
+                return;
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(consoleMutex);
+                printf("Poruka od servera: %s\n", oneMessage.c_str());
+            }
+
             saveData(oneMessage.c_str());
 
             if (selectedOption == 2) {
-                receivedAcks++;
-                if (receivedAcks % 100 == 0 || receivedAcks == expectedAcks) {
-                    printf("Primljene potvrde: %d / %d\n", receivedAcks.load(), expectedAcks);
+                if (oneMessage.find("FAIL msg_id=") != std::string::npos) {
+                    expectedAcks--;
+                    printf("Primljen FAIL, smanjujem expectedAcks: %d preostalo\n", expectedAcks.load());
+                }
+                else if (oneMessage.find("ACK msg_id=") != std::string::npos) {
+                    receivedAcks++;
+                    if (receivedAcks % 100 == 0 || receivedAcks == expectedAcks) {
+                        printf("Primljene potvrde: %d / %d\n", receivedAcks.load(), expectedAcks.load());
+                    }
+                }
+                else {
+                   
+                    printf("Info poruka (nije ACK/FAIL): \"%s\"\n", oneMessage.c_str());
                 }
 
                 if (receivedAcks >= expectedAcks) {
@@ -176,13 +217,17 @@ int main() {
 
     printf("Povezan na server!\n");
 
-    // Izbor opcije pre pokretanja niti
-    printf("Izaberite opciju:\n");
-    printf("1. Unesite poruku za server (ili 'end' za prekid)\n");
-    printf("2. Posaljite 2000 razlicitih poruka\n");
-    printf("Opcija: ");
-    scanf_s("%d", &selectedOption);
-    
+    while (true) {
+        printf("\nIzaberite opciju:\n");
+        printf("1. Unesite poruke rucno\n");
+        printf("2. Posaljite 2000 poruka automatski\n");
+        printf("Opcija: ");
+        std::cin >> selectedOption;
+        std::cin.ignore();
+
+        if (selectedOption == 1 || selectedOption == 2) break;
+        else printf("Nevalidan unos. Pokušajte ponovo.\n");
+    }
 
     std::thread sender(sendMessages, clientSocket);
     std::thread receiver(receiveMessages, clientSocket);
@@ -194,8 +239,8 @@ int main() {
     closesocket(clientSocket);
     WSACleanup();
 
-    scanf_s("%d", &selectedOption);
-    getchar();
+    printf("Pritisnite ENTER za izlaz...");
+    std::cin.get();
 
     return 0;
 }

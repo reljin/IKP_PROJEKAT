@@ -27,7 +27,9 @@ std::mutex workersMutex;
 
 Queue* clientMessages = NULL;
 std::mutex clientMessageQueueMutex;
-std::vector<SOCKET> clientSockets;
+
+Node* clientSocketsList = NULL;
+
 
 int global_msg_id = 0;
 static std::mutex idMutex;
@@ -81,10 +83,8 @@ void disconnectClient(SOCKET clientSocket) {
 
     {
         std::lock_guard<std::mutex> lock(clientSocketsMutex);
-        auto it = std::find(clientSockets.begin(), clientSockets.end(), clientSocket);
-        if (it != clientSockets.end()) {
-            clientSockets.erase(it);
-        }
+        removeSocket(&clientSocketsList, clientSocket);
+        
     }
 
     {
@@ -189,9 +189,8 @@ void handleClient(SOCKET clientSocket) {
                         retryCount++;
 
                         if (retryCount == MAX_RETRIES) {
-                            printf("Workeri su pretrpani");
-                            disconnectClient(clientSocket);
-
+                            const char* overloadMsg = "Sistem je preopterecen.Poruke ce biti spore\n";
+                            send(clientSocket, overloadMsg, (int)strlen(overloadMsg), 0);
                             break;
                         }
 
@@ -208,10 +207,14 @@ void handleClient(SOCKET clientSocket) {
                     retryCount++;
                 }
             }
-            // Pošalji kratak ack klijentu
-            //char shortAck[BUFFER_SIZE];
-            //snprintf(shortAck, sizeof(shortAck), "LB primio msg_id=%d", msg.msg_id);
-            //send(clientSocket, shortAck, (int)strlen(shortAck), 0);
+
+            if (!success) {
+                // Slanje ka Workeru nije uspelo — šaljemo FAIL klijentu
+                char failMsg[BUFFER_SIZE];
+                snprintf(failMsg, sizeof(failMsg), "FAIL msg_id=%d\n", msg.msg_id);
+                send(clientSocket, failMsg, (int)strlen(failMsg), 0);
+                printf("LB: Slanje ka Workeru nije uspelo. Poslat FAIL za msg_id=%d klijentu.\n", msg.msg_id);
+            }
         }
     }
 
@@ -240,7 +243,7 @@ void clientListener(SOCKET clientListenSocket) {
 
         {
             std::lock_guard<std::mutex> lock(clientSocketsMutex);
-            clientSockets.push_back(clientSocket);
+            insertSocket(&clientSocketsList, clientSocket);
         }
 
         std::thread(handleClient, clientSocket).detach();
@@ -325,7 +328,8 @@ void handleWorkerResponse(Worker* worker) {
             if (finished) {
                 char ackBuffer[BUFFER_SIZE];
 
-                snprintf(ackBuffer, sizeof(ackBuffer),"msg_id=%d obradjeno: %s",finished->msg_id, finished->content);
+                
+                snprintf(ackBuffer, sizeof(ackBuffer), "ACK msg_id=%d obradjeno: %s", finished->msg_id, finished->content);//ovde je send
                 send(finished->clientSocket, ackBuffer, (int)strlen(ackBuffer), 0);
                 
                 {

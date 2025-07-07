@@ -90,9 +90,11 @@ void processMessages(SOCKET workerSocket) {
 
         saveData(queueStoredBuffer);
 
-        //std::this_thread::sleep_for(std::chrono::milliseconds(100)); 
+        std::this_thread::sleep_for(std::chrono::milliseconds(1)); //dont touch
+        //std::this_thread::sleep_for(std::chrono::milliseconds(100)); // ZA TESTIRANJE
       
-        std::string response = std::string(queueStoredBuffer) + "\n";
+        std::string response(queueStoredBuffer, msgLen);
+        response += "\n";
         send(workerSocket, response.c_str(), response.size(), 0);
 
         
@@ -104,7 +106,7 @@ void processMessages(SOCKET workerSocket) {
 
 void receiveData(SOCKET workerSocket) {
     char buffer[BUFFER_SIZE];
-    std::string leftover;  // čuva fragment nedovršene poruke
+    std::string leftover;  
 
     while (true) {
         int bytesReceived = recv(workerSocket, buffer, sizeof(buffer) - 1, 0);

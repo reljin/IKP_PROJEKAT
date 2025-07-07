@@ -81,13 +81,31 @@ Worker* selectWorker(Node* workers) {
     return findMostFreeWorker(workers);
 }
 
-std::mutex sendDataMutex;
+bool isWorkerSocketAlive(Worker* worker) {
+    if (!worker || worker->socketFd == -1)
+        return false;
 
+    char test;
+    int result = recv(worker->socketFd, &test, 1, MSG_PEEK);
+    if (result == 0) return false; // socket zatvoren
+    if (result == SOCKET_ERROR && WSAGetLastError() != WSAEWOULDBLOCK) return false; // ozbiljna greška
+
+    return true;
+}
+
+std::mutex sendDataMutex;
 bool sendDataToWorker(Worker* worker, Queue* clientMessages) {
     if (worker == NULL) {
         printf("Nevalidan Worker!\n");
         return false;
     }
+
+    /*
+    if (!isWorkerSocketAlive(worker)) {
+        printf("[sendDataToWorker] Worker ID=%d je zatvoren. Prekidam slanje.\n", worker->id);
+        return false;
+    }
+    */
 
     std::lock_guard<std::mutex> lock(sendDataMutex);
 
@@ -143,30 +161,10 @@ bool sendDataToWorker(Worker* worker, Queue* clientMessages) {
     }
 }
 
-std::atomic<bool> isFREE_QUEUE_ACTIVE(false);
-
-void sendFreeQueueCommandToWorker(Worker* worker) {
-
-    const char* freeQueueCommand = "FREE_QUEUE\n";
-    int sent = send(worker->socketFd, freeQueueCommand, strlen(freeQueueCommand), 0);
-    if (sent == SOCKET_ERROR) {
-        printf("Greska pri slanju FREE_QUEUE workeru (ID=%d).\n", worker->id);
-    }
-}
-
-#include <atomic>
-std::atomic<bool> isRedistributeActive(false);
 
 //ako worker opadne a svi workeri su vec primili poruke i samo obradjuju
 
 void redistributeMessagesDead(Queue* clientMessages, Node* workers) {
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-    if (isRedistributeActive.load()) {
-        printf("Glavna redistribucija je aktivna. Dead redistribucija se prekida.\n");
-        return;
-    }
 
     while (true) {
         {
@@ -196,75 +194,5 @@ void redistributeMessagesDead(Queue* clientMessages, Node* workers) {
     }
 
 
-
-}
-
-void redistributeMessages(Queue* clientMessages, Node* workers) {
-
-    isRedistributeActive.store(true);
-
-    //Slanje FREE_QUEUE komande svim workerima
-    {
-
-        Node* current = workers;
-        while (current != NULL && current->next != NULL) {
-            Worker* worker = (Worker*)current->data;
-            sendFreeQueueCommandToWorker(worker);
-            current = current->next;
-        }
-    }
-
-    //Prikupi sve neobrađene poruke sa svih workera i prebaci ih u clientMessages
-    {
-       
-        Node* current = workers;
-        while (current != NULL) {
-            Worker* worker = (Worker*)current->data;
-            {
-             
-                while (worker->dataCount > 0) {
-                    Message* msgPtr = removeMessageFromWorker(worker);
-                    Message safeCopy;
-                    memcpy(&safeCopy, msgPtr, sizeof(Message));
-                    //printf("[REDIST] msg_id=%d content=\"%s\"\n", safeCopy.msg_id, safeCopy.content);
-                    logMessage("[REDIST] msg_id=%d content=\"%s\"", safeCopy.msg_id, safeCopy.content);
-                    if (msgPtr != NULL) {
-                        {
-                            std::lock_guard<std::mutex> queueLock(clientMessageQueueMutex);
-                            enqueue(clientMessages, msgPtr);
-                            printf("DBG: content = \"%s\"\n", msgPtr->content);
-                        }
-                        free(msgPtr); 
-                    }
-                }
-            }
-            current = current->next;
-        }
-    }
-
-    //Uzimanje poruka iz clientMessages i slanje najraspolozivijem worker-u
-    while (true) {
-        {
-      
-            std::lock_guard<std::mutex> queueLock(clientMessageQueueMutex);
-            if (isEmpty(clientMessages)) {
-                break;
-            }
-        }
-
-        Worker* bestWorker = nullptr;
-        {
-       
-            bestWorker = findMostFreeWorker(workers);
-        }
-
-        if (bestWorker == nullptr) {
-            std::cerr << "Nema dostupnih workera za redistribuciju.\n";
-            break;
-        }
-
-        sendDataToWorker(bestWorker, clientMessages);
-    }
-    isRedistributeActive.store(false);
 
 }

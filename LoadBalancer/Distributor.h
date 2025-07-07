@@ -10,9 +10,7 @@
 
 Worker* findMostFreeWorker(Node* workers);
 bool sendDataToWorker(Worker* worker, Queue* clientMessages);
-void redistributeMessages(Queue* clientMessages, Node* workers);
 void redistributeMessagesDead(Queue* clientMessages, Node* workers);
-extern std::atomic<bool> isFREE_QUEUE_ACTIVE;
 
 	
 #endif

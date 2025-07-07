@@ -150,6 +150,7 @@
   <ItemGroup>
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="list.cpp" />
+    <ClCompile Include="list_utils.cpp" />
     <ClCompile Include="message.cpp" />
     <ClCompile Include="message_map.cpp" />
     <ClCompile Include="pch.cpp">
