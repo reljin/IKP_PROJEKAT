@@ -60,6 +60,10 @@ Makefile
 # VSCode 
 .vscode/
 
+**/Debug/
+**/Release/
+**/x64/
+
 #save fajlovi
 workerOutput.txt
 replicatorOutput.txt
